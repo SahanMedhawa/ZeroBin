@@ -1,0 +1,196 @@
+import API from "../helpers/apiHelper";
+
+const createCollector = async (collector) => {
+  try {
+    const createdCollector = await new API().post("collector", collector);
+    return createdCollector;
+  } catch (error) {
+    console.error("Error creating collector:", error.message);
+    throw error; // Rethrow the error for the component to handle
+  }
+};
+
+const getAllCollectors = async () => {
+  try {
+    const collectors = await new API().get("collector", {});
+    // console.log("garbagesINjs => ", garbages);
+    return collectors;
+  } catch (error) {
+    console.error("Error fetching collectors:", error.message);
+    throw error; // Rethrow the error for the component to handle
+  }
+};
+
+const getAllCollectorsInWma = async (id) => {
+  try {
+    const collectors = await new API().get(`collector/wma-collectors/${id}`, {});
+    return collectors;
+  } catch (error) {
+    console.error("Error fetching collectors:", error.message);
+    throw error; // Rethrow the error for the component to handle
+  }
+};
+
+// const getUserAllGarbages = async () => {
+//   try {
+//     const garbages = await new API().get("garbage/garbage-requests", {});
+//     // console.log("garbagesINjs => ", garbages);
+//     return garbages;
+//   } catch (error) {
+//     console.error("Error fetching garbages:", error.message);
+//     throw error; // Rethrow the error for the component to handle
+//   }
+// };
+
+const updateCollector = async (status, id) => {
+  // Ensure the body only contains the status
+  try {
+    const updatedCollector = await new API().put(
+      `collector/${id}`, // Make sure this URL matches your API endpoint for garbage requests
+      status
+    );
+    // console.log(updatedGarbage);
+    return updatedCollector;
+  } catch (error) {
+    console.error("Error updating collector:", error.message);
+    throw error; // Rethrow the error for the component to handle
+  }
+};
+
+const deleteCollector = async (id) => {
+  try {
+    const deletedCollector = await new API().delete(`collector/${id}`);
+    // console.log("deletedGarbage => ", deletedGarbage);
+    return deletedCollector.data;
+  } catch (error) {
+    console.error("Error deleting Collector:", error.message);
+    throw error; // Rethrow the error for the component to handle
+  }
+};
+
+// Collector Portal Authentication APIs
+const loginCollector = async (collectorNIC, truckNumber) => {
+  try {
+    const response = await new API().post("collector/auth", {
+      collectorNIC,
+      truckNumber,
+    });
+    return response;
+  } catch (error) {
+    console.error("Error logging in collector:", error.message);
+    throw error;
+  }
+};
+
+const getCollectorProfile = async () => {
+  try {
+    const profile = await new API().get("collector/profile");
+    return profile;
+  } catch (error) {
+    console.error("Error fetching collector profile:", error.message);
+    throw error;
+  }
+};
+
+const logoutCollector = async () => {
+  try {
+    const response = await new API().post("collector/logout", {});
+    return response;
+  } catch (error) {
+    console.error("Error logging out collector:", error.message);
+    throw error;
+  }
+};
+
+// Schedule APIs
+const getCollectorSchedules = async () => {
+  try {
+    const schedules = await new API().get("schedule/collector-schedules");
+    return schedules;
+  } catch (error) {
+    console.error("Error fetching collector schedules:", error.message);
+    throw error;
+  }
+};
+
+const updateScheduleStatus = async (scheduleId, status) => {
+  try {
+    const updated = await new API().put(`schedule/${scheduleId}`, { status });
+    return updated;
+  } catch (error) {
+    console.error("Error updating schedule status:", error.message);
+    throw error;
+  }
+};
+
+// Smart Device APIs
+const getSmartDeviceById = async (deviceId) => {
+  try {
+    const device = await new API().get(`smartDevice/${deviceId}`);
+    return device;
+  } catch (error) {
+    console.error("Error fetching smart device:", error.message);
+    throw error;
+  }
+};
+
+const updateSmartDevice = async (deviceId, updates) => {
+  try {
+    const updated = await new API().put(`smartDevice/${deviceId}`, updates);
+    return updated;
+  } catch (error) {
+    console.error("Error updating smart device:", error.message);
+    throw error;
+  }
+};
+
+const getAllSmartDevices = async () => {
+  try {
+    const devices = await new API().get("smartDevice");
+    return devices;
+  } catch (error) {
+    console.error("Error fetching smart devices:", error.message);
+    throw error;
+  }
+};
+
+// Transaction APIs
+const createTransaction = async (transactionData) => {
+  try {
+    const transaction = await new API().post("transaction", transactionData);
+    return transaction;
+  } catch (error) {
+    console.error("Error creating transaction:", error.message);
+    throw error;
+  }
+};
+
+// Area APIs
+const getAreaById = async (areaId) => {
+  try {
+    const area = await new API().get(`area/${areaId}`);
+    return area;
+  } catch (error) {
+    console.error("Error fetching area:", error.message);
+    throw error;
+  }
+};
+
+export {
+    createCollector,
+    getAllCollectors,
+    deleteCollector,
+    getAllCollectorsInWma,
+    updateCollector,
+    // Collector Portal APIs
+    loginCollector,
+    getCollectorProfile,
+    logoutCollector,
+    getCollectorSchedules,
+    updateScheduleStatus,
+    getSmartDeviceById,
+    updateSmartDevice,
+    getAllSmartDevices,
+    createTransaction,
+    getAreaById
+};
