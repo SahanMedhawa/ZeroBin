@@ -118,7 +118,7 @@ const getCollectorSchedules = async () => {
 
 const updateScheduleStatus = async (scheduleId, status) => {
   try {
-    const updated = await new API().put(`schedule/${scheduleId}`, { status });
+    const updated = await new API().put(`schedule/${scheduleId}/status`, { status });
     return updated;
   } catch (error) {
     console.error("Error updating schedule status:", error.message);

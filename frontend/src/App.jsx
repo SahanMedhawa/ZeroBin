@@ -46,6 +46,10 @@ import UpdateGarbage from "./pages/collector/updateGarbage/UpdateGarbage";
 import AdminAreaManagement from "./pages/admin/areas/AdminAreaManagement";
 import WMAServiceAreas from "./pages/wma/areas/WMAServiceAreas";
 
+// Sensor-based Bin Management
+import BinManagement from "./pages/client/bin/BinManagement";
+import FullBinsCollector from "./pages/collector/bins/FullBinsCollector";
+
 function App() {
   return (
     <>
@@ -62,6 +66,7 @@ function App() {
           {/* Protected User routes */}
           <Route path="/user/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           <Route path="/user/my-garbage" element={<ProtectedRoute><UserGarbageRequest /></ProtectedRoute>} />
+          <Route path="/user/my-bin" element={<ProtectedRoute><BinManagement /></ProtectedRoute>} />
           <Route path="/user/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route
             path="/user/my-transaction"
@@ -103,6 +108,7 @@ function App() {
           {/* Protected Collector Routes */}
           <Route path="/collector/login" element={<CollectorLoginRedirect />} />
           <Route path="/collector/dashboard" element={<CollectorProtectedRoute><CollectorDashboard /></CollectorProtectedRoute>} />
+          <Route path="/collector/full-bins" element={<CollectorProtectedRoute><FullBinsCollector /></CollectorProtectedRoute>} />
           <Route path="/collector/schedule" element={<CollectorProtectedRoute><CollectorSchedule /></CollectorProtectedRoute>} />
           <Route path="/collector/map" element={<CollectorProtectedRoute><CollectorMap /></CollectorProtectedRoute>} />
           <Route path="/collector/scanner" element={<CollectorProtectedRoute><CollectorScanner /></CollectorProtectedRoute>} />

@@ -1,4 +1,5 @@
 import Schedule from "../models/scheduleModel.js";
+import Collector from "../models/collectorModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 
 /**
@@ -20,6 +21,7 @@ const createSchedule = asyncHandler(async (req, res) => {
     throw new Error("Please fill all required fields.");
   }
 
+  // Create schedule
   const schedule = new Schedule({
     wmaId,
     collectorId,
@@ -32,6 +34,14 @@ const createSchedule = asyncHandler(async (req, res) => {
   });
 
   const createdSchedule = await schedule.save();
+
+  // Update collector's assignedAreas if not already assigned
+  const collector = await Collector.findById(collectorId);
+  if (collector && !collector.assignedAreas.includes(area)) {
+    collector.assignedAreas.push(area);
+    await collector.save();
+  }
+
   res.status(201).json(createdSchedule);
 });
 
@@ -127,6 +137,44 @@ const updateSchedule = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/schedule/:id/status
+ * @desc    Update schedule status (Collector only - can only update status field)
+ * @access  Private/Collector
+ * @param   {String} status - The new status (Pending, In Progress, Completed)
+ * @returns {Object} - The updated schedule
+ */
+const updateScheduleStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  if (!status) {
+    res.status(400);
+    throw new Error("Status is required");
+  }
+
+  const schedule = await Schedule.findById(req.params.id);
+
+  if (!schedule) {
+    res.status(404);
+    throw new Error("Schedule not found");
+  }
+
+  // Verify collector is assigned to this schedule
+  if (schedule.collectorId.toString() !== req.collector._id.toString()) {
+    res.status(403);
+    throw new Error("You are not assigned to this schedule");
+  }
+
+  schedule.status = status;
+  const updatedSchedule = await schedule.save();
+
+  await updatedSchedule.populate("wmaId", "wmaname");
+  await updatedSchedule.populate("collectorId", "collectorName");
+  await updatedSchedule.populate("area", "name");
+
+  res.json(updatedSchedule);
+});
+
+/**
  * @route   DELETE /api/schedule/:id
  * @desc    Delete a schedule (WMA only)
  * @access  Private/WMA
@@ -149,6 +197,7 @@ export {
   getTruckSchedules,
   getScheduleById,
   updateSchedule,
+  updateScheduleStatus,
   deleteSchedule,
   getSchedulesByWma,
 };

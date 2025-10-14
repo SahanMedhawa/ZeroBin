@@ -5,6 +5,7 @@ import {
     getTruckSchedules,
     getScheduleById,
     updateSchedule,
+    updateScheduleStatus,
     deleteSchedule,
     getSchedulesByWma
 } from "../controllers/scheduleController.js";
@@ -20,6 +21,9 @@ router
 
 // Collector Routes
 router.route("/collector-schedules").get(authenticateCollector, getTruckSchedules);
+
+// Collector Status Update Route (only status field)
+router.route("/:id/status").put(authenticateCollector, updateScheduleStatus);
 
 // Get schedules by WMA ID
 router.route("/wma-schedules/:id").get(getSchedulesByWma);
