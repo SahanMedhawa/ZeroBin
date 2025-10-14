@@ -19,6 +19,7 @@ import scheduleRoutes from "./routes/scheduleRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import areaRoutes from "./routes/areaRoutes.js"; // Import areaRoutes
 import smartDeviceRoutes from "./routes/smartDeviceRoutes.js"; // Import smartDeviceRoutes
+import contactRoutes from "./routes/contactRoutes.js"; // Import contactRoutes
 
 dotenv.config();
 const port = process.env.PORT || 5000;
@@ -57,7 +58,7 @@ configurePassport();
 
 // Conn Testing
 app.get("/api", (req, res) => {
-  res.send("Connected to CleanPath API");
+  res.send("Connected to ZeroBin API");
 });
 
 // Users Route
@@ -83,6 +84,9 @@ app.use("/api/areas", areaRoutes);
 
 // smarDevice Route
 app.use("/api/smartDevices", smartDeviceRoutes);
+
+// Contact Route
+app.use("/api/contacts", contactRoutes);
 
 app.listen(port, () => console.log(`Server running on port: ${port}`));
 

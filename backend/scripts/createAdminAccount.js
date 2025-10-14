@@ -14,7 +14,7 @@ const createAdminAccount = async () => {
     // Admin account details
     const adminData = {
       username: 'Admin',
-      email: 'admin@cleanpath.com',
+      email: 'admin@zerobin.com',
       password: 'Sahan1234',
       isAdmin: true,
       area: null, // Admin doesn't need an area

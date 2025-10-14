@@ -38,6 +38,20 @@ const garbageSchema = mongoose.Schema(
       enum: ["Pending", "Collected", "In Progress", "Cancelled"],
       default: "Pending",
     },
+    assignedCollector: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Collector",
+      required: false,
+    },
+    assignedWma: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "WMA",
+      required: false,
+    },
+    collectionDate: {
+      type: Date,
+      required: false,
+    },
   },
   { timestamps: true }
 );

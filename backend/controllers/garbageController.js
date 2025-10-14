@@ -1,4 +1,5 @@
 import Garbage from "../models/garbageModel.js";
+import Collector from "../models/collectorModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import User from "../models/userModel.js";
 
@@ -146,6 +147,76 @@ const getGarbageRequestByArea = asyncHandler(async (req, res) => {
   res.json(garbage);
 });
 
+/**
+ * @route   GET /api/garbage/collector/my-requests
+ * @desc    Get garbage requests for collector's assigned areas
+ * @access  Private (Authenticated Collector)
+ * @returns {Array} - A list of garbage requests in collector's assigned areas
+ */
+const getCollectorGarbageRequests = asyncHandler(async (req, res) => {
+  // Find the collector
+  const collector = await Collector.findById(req.collector._id);
+  
+  if (!collector) {
+    res.status(404);
+    throw new Error("Collector not found.");
+  }
+
+  // Find garbage requests where area matches collector's assigned areas
+  const garbageRequests = await Garbage.find({
+    area: { $in: collector.assignedAreas },
+    status: { $in: ["Pending", "In Progress"] }, // Only show pending or in-progress requests
+  })
+    .populate("user", "username email contact address")
+    .populate("area", "name district postalCode")
+    .populate("assignedCollector", "collectorName truckNumber")
+    .populate("assignedWma", "wmaname")
+    .sort({ createdAt: -1 });
+
+  res.json(garbageRequests);
+});
+
+/**
+ * @route   PUT /api/garbage/:id/assign
+ * @desc    Assign garbage request to collector
+ * @access  Private (Authenticated Collector)
+ * @returns {Object} - Updated garbage request
+ */
+const assignGarbageToCollector = asyncHandler(async (req, res) => {
+  const garbage = await Garbage.findById(req.params.id);
+  
+  if (!garbage) {
+    res.status(404);
+    throw new Error("Garbage request not found");
+  }
+
+  const collector = await Collector.findById(req.collector._id);
+  
+  if (!collector) {
+    res.status(404);
+    throw new Error("Collector not found");
+  }
+
+  // Check if collector is assigned to this area
+  if (!collector.assignedAreas.includes(garbage.area.toString())) {
+    res.status(403);
+    throw new Error("You are not assigned to this area");
+  }
+
+  // Assign the garbage request
+  garbage.assignedCollector = collector._id;
+  garbage.assignedWma = collector.wmaId;
+  garbage.status = "In Progress";
+
+  const updatedGarbage = await garbage.save();
+  await updatedGarbage.populate("user", "username email contact address");
+  await updatedGarbage.populate("area", "name district");
+  await updatedGarbage.populate("assignedCollector", "collectorName truckNumber");
+  await updatedGarbage.populate("assignedWma", "wmaname");
+
+  res.json(updatedGarbage);
+});
+
 export {
   createGarbageRequest,
   getAllGarbageRequests,
@@ -153,5 +224,7 @@ export {
   getGarbageRequestById,
   updateGarbageRequest,
   deleteGarbageRequest,
-  getGarbageRequestByArea
+  getGarbageRequestByArea,
+  getCollectorGarbageRequests,
+  assignGarbageToCollector,
 };

@@ -6,18 +6,34 @@ const areaSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    type: {
+    district: {
       type: String,
       required: true,
-      enum: ["flat", "weightBased"], // Enumerated values
     },
-    rate: {
-      type: Number,
-      required: true,
+    postalCode: {
+      type: String,
+      required: false,
+    },
+    coordinates: {
+      latitude: {
+        type: Number,
+        required: false,
+      },
+      longitude: {
+        type: Number,
+        required: false,
+      },
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }
 );
+
+// Compound index to ensure unique area names within the same district
+areaSchema.index({ name: 1, district: 1 }, { unique: true });
 
 const Area = mongoose.model("Area", areaSchema);
 

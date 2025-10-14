@@ -30,6 +30,12 @@ const collectorSchema = new mongoose.Schema({
     required: true,
     enum: ["Available", "Not-Available"],
   },
+  assignedAreas: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Area",
+    },
+  ],
 });
 
 const Collector = mongoose.model("Collector", collectorSchema);

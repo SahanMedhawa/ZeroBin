@@ -122,7 +122,7 @@ export default function ViewSchedules() {
             currentSchedule.filter((schedule) => schedule._id !== selectedScheduleId)
           );
           handleClose();
-          toast.success("Schedule Deleted Successfully!", {
+          toast.success("✓ Schedule deleted successfully!", {
             position: "bottom-right",
             autoClose: 3000,
             hideProgressBar: false,
@@ -130,13 +130,17 @@ export default function ViewSchedules() {
             pauseOnHover: true,
             draggable: true,
             progress: undefined,
-            theme: "colored",
+            theme: "light",
           });
           setTimeout(() => {
             window.location.reload();
           }, 3000);
         } catch (error) {
-          alert(error.message);
+          toast.error("✕ Failed to delete schedule", {
+            position: "bottom-right",
+            autoClose: 3000,
+            theme: "light",
+          });
         }
       }
     };
@@ -166,12 +170,18 @@ export default function ViewSchedules() {
 
   return (
     <WMADrawer>
-        <h1 className="m-5 text-2xl font-semibold text-green-900">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-indigo-50 p-6">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-700 to-indigo-800 bg-clip-text text-transparent">
             Schedule Management
-        </h1>
-        <div className="m-5 shadow-md rounded-lg">
-        <div className="flex justify-between p-4">
-          <div className="flex items-center space-x-4">
+          </h1>
+          <p className="text-gray-600 mt-2">View and manage collection schedules</p>
+        </div>
+
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100">
+          <div className="flex flex-wrap items-center gap-4">
             <FormControl className="w-44">
               <InputLabel id="status-filter-label">Filter By Status</InputLabel>
               <Select
@@ -179,6 +189,7 @@ export default function ViewSchedules() {
                 value={statusFilter}
                 label="Status"
                 onChange={(e) => setStatusFilter(e.target.value)}
+                className="!rounded-xl bg-white"
               >
                 <MenuItem value="">All</MenuItem>
                 <MenuItem value="Pending">Pending</MenuItem>
@@ -186,19 +197,6 @@ export default function ViewSchedules() {
                 <MenuItem value="In Progress">In Progress</MenuItem>
               </Select>
             </FormControl>
-            {/* <FormControl className="w-44">
-              <InputLabel id="type-filter-label">Filter By Type</InputLabel>
-              <Select
-                labelId="type-filter-label"
-                value={typeFilter}
-                label="Type"
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="Recyclable">Recyclable</MenuItem>
-                <MenuItem value="Non-Recyclable">Non-Recyclable</MenuItem>
-              </Select>
-            </FormControl> */}
             <FormControl className="w-44">
               <InputLabel id="area-filter-label">Filter By Area</InputLabel>
               <Select
@@ -206,6 +204,7 @@ export default function ViewSchedules() {
                 value={areaFilter}
                 label="Area"
                 onChange={(e) => setAreaFilter(e.target.value)}
+                className="!rounded-xl bg-white"
               >
                 <MenuItem value={""}>All Areas</MenuItem>
                 {areas.map((area) => (
@@ -216,40 +215,33 @@ export default function ViewSchedules() {
               </Select>
             </FormControl>
           </div>
-          {/* <Button
-            variant="contained"
-            color="success"
-            onClick={() =>{navigate("/admin/schedules/create")}}
-          >
-            Create New Schedule
-          </Button> */}
         </div>
-        <table className="w-full text-sm text-left rtl:text-right text-gray-500 :text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 :bg-gray-700 :text-gray-400">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-900">
             <tr>
-              <th scope="col" className="px-5 py-3">
-                Wast Management Authority
+              <th scope="col" className="px-5 py-4 font-semibold">
+                Waste Management Authority
               </th>
-              <th scope="col" className="px-5 py-3">
+              <th scope="col" className="px-5 py-4 font-semibold">
                 Collector
               </th>
-              <th scope="col" className="px-3 py-3">
+              <th scope="col" className="px-3 py-4 font-semibold">
                 Area
               </th>
-              <th scope="col" className="px-5 py-3">
-              Scheduled Date
+              <th scope="col" className="px-5 py-4 font-semibold">
+                Scheduled Date
               </th>
-              <th scope="col" className="px-5 py-3">
-              Scheduled Time
+              <th scope="col" className="px-5 py-4 font-semibold">
+                Scheduled Time
               </th>
-              <th scope="col" className="px-5 py-3">
+              <th scope="col" className="px-5 py-4 font-semibold">
                 Status
               </th>
-              <th scope="col" className="px-4 py-3">
-                <span className="sr-only"></span>
+              <th scope="col" className="px-4 py-4 font-semibold">
+                <span className="sr-only">Edit</span>
               </th>
-              <th scope="col" className="px-5 py-3">
-                <span className="sr-only"></span>
+              <th scope="col" className="px-5 py-4 font-semibold">
+                <span className="sr-only">Delete</span>
               </th>
             </tr>
           </thead>
@@ -260,58 +252,55 @@ export default function ViewSchedules() {
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .map((schedule) => (
                   <tr
-                    className="bg-white border-b :bg-gray-800 :border-gray-700"
+                    className="bg-white border-b hover:bg-purple-50 transition-colors"
                     key={schedule._id}
                   >
                     <th
                       scope="row"
-                      className="px-5 py-4 font-medium text-gray-900 whitespace-nowrap :text-white"
+                      className="px-5 py-4 font-medium text-gray-900"
                     >
                       {schedule.wmaId ?  schedule.wmaId.wmaname : "No WMA assigned"}
                     </th>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 text-gray-700">
                         {schedule.collectorId? schedule.collectorId.collectorName : "No collector assigned"}
                     </td>
-                    <td className="px-5 py-4">{schedule.area? schedule.area.name : "No area assigned"}</td>
-                    {/* <td className="px-5 py-4">{garbage.user.address}</td> */}
-                    <td className="px-5 py-4">
-                      {" "}
+                    <td className="px-5 py-4 text-gray-700">{schedule.area? schedule.area.name : "No area assigned"}</td>
+                    <td className="px-5 py-4 text-gray-700">
                       {new Date(schedule.date).toLocaleDateString()}
                     </td>
-                    <td className="px-5 py-4">
-                      {" "}
+                    <td className="px-5 py-4 text-gray-700">
                       {schedule.time}
                     </td>
-                    <td className="px-5 py-4 capitalize">
+                    <td className="px-5 py-4">
                       <span
-                        className={`uppercase font-semibold text-[12px] px-3 py-1 rounded-md ${getStatusClassName(
+                        className={`font-semibold text-xs px-3 py-1.5 rounded-lg ${getStatusClassName(
                             schedule.status
                         )}`}
                       >
                         {schedule.status}
                       </span>
                     </td>
-                    <td className="px- py-4 text-right">
+                    <td className="px-4 py-4 text-right">
                       <a
                         onClick={() => handleEditClick(schedule)}
-                        className="font-medium text-gray-400 :text-blue-500 cursor-pointer"
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg border-2 border-purple-500 text-purple-600 hover:bg-purple-50 transition-all cursor-pointer"
                       >
-                        {schedule.status === 'Pending' ? <EditIcon /> : ''}
+                        {schedule.status === 'Pending' ? <EditIcon fontSize="small" /> : ''}
                       </a>
                     </td>
                     <td className="px-3 py-4 text-right">
                       <a
                         onClick={() => handleClickOpen(schedule._id)}
-                        className="font-medium text-red-600 :text-blue-500 cursor-pointer"
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg border-2 border-red-500 text-red-600 hover:bg-red-50 transition-all cursor-pointer"
                       >
-                        {schedule.status === 'Completed' ? <DeleteIcon /> : ''}
+                        {schedule.status === 'Completed' ? <DeleteIcon fontSize="small" /> : ''}
                       </a>
                     </td>
                   </tr>
                 ))
             ) : (
-              <tr className="">
-                <td className="w-full text-lg text-red-600 py-7 font-semibold text-center col-span-5">
+              <tr>
+                <td colSpan="8" className="w-full text-lg text-red-600 py-7 font-semibold text-center">
                   No schedules found!
                 </td>
               </tr>
@@ -319,7 +308,8 @@ export default function ViewSchedules() {
           </tbody>
         </table>
         </div>
-        <Dialog
+      </div>
+      <Dialog
         open={open}
         onClose={handleClose}
         aria-labelledby="alert-dialog-title"
@@ -339,7 +329,26 @@ export default function ViewSchedules() {
           </Button>
         </DialogActions>
       </Dialog>
-      <ToastContainer />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastClassName="!bg-white !shadow-2xl !rounded-2xl !border-l-4 !border-purple-500"
+        bodyClassName="text-gray-800 font-medium"
+        progressClassName="!bg-gradient-to-r !from-purple-600 !to-indigo-700"
+        closeButton={
+          <button className="text-gray-400 hover:text-gray-600 transition-colors">
+            ✕
+          </button>
+        }
+      />
       
     </WMADrawer>
   )

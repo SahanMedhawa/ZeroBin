@@ -159,7 +159,7 @@ const AdminDevice = () => {
       doc.setFont("helvetica", "bold");
       doc.setTextColor("48752c"); // Change color if needed
       doc.setFontSize(16);
-      doc.text("CleanPath Waste Management System", 95, 18); // Title in the header
+      doc.text("ZeroBin Waste Management System", 95, 18); // Title in the header
 
       // Title and Date
       doc.setFont("helvetica", "normal");

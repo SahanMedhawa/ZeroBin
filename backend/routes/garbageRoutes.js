@@ -6,9 +6,11 @@ import {
   getGarbageRequestById,
   updateGarbageRequest,
   deleteGarbageRequest,
-  getGarbageRequestByArea
+  getGarbageRequestByArea,
+  getCollectorGarbageRequests,
+  assignGarbageToCollector,
 } from "../controllers/garbageController.js";
-import { authenticate, authorizeAdmin } from "../middlewares/authMiddleware.js";
+import { authenticate, authenticateCollector, authorizeAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -20,7 +22,14 @@ router
 
 // Route to get garbage requests for a specific user
 router.route("/garbage-requests").get(authenticate, getUserGarbageRequests);
+
+// Route to get garbage requests for collector's assigned areas
+router.route("/collector/my-requests").get(authenticateCollector, getCollectorGarbageRequests);
+
 router.route("/garbage-requests-area/:id").get(getGarbageRequestByArea);
+
+// Route to assign garbage request to collector
+router.route("/:id/assign").put(authenticateCollector, assignGarbageToCollector);
 
 // Routes to get, update, and delete a garbage request by ID
 router

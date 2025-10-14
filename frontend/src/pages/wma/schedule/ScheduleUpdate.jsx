@@ -44,9 +44,9 @@ const ScheduleUpdate = () => {
         collectorId:collector, status 
       }
       await updateSchedule(body, location.state.schedule._id);
-      toast.success("schedule status updated successfully!", {
+      toast.success("✓ Schedule updated successfully!", {
         position: "bottom-right",
-        autoClose: 5000,
+        autoClose: 4000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -58,41 +58,56 @@ const ScheduleUpdate = () => {
         navigate("/wma/schedules");
       }, 2000);
     } catch (error) {
-      console.error("Error updating garbage status:", error.message);
-      toast.error("Failed to update garbage status.");
+      console.error("Error updating schedule:", error.message);
+      toast.error("✕ Failed to update schedule", {
+        position: "bottom-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "light",
+      });
     }
   };
 
   return (
     <WMADrawer>
-      <div className="grid grid-cols-1 lg:grid-cols- gap-8 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-indigo-50 p-6">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-700 to-indigo-800 bg-clip-text text-transparent">
+            Update Schedule
+          </h1>
+          <p className="text-gray-600 mt-2">Modify schedule details and status</p>
+        </div>
 
         {/* Form Section */}
-        <div className="bg-white shadow-lg rounded-lg p-8">
-        <div className=" float-right cursor-pointer" onClick={() => navigate("/wma/schedules")}>
-            <CloseIcon />
+        <div className="bg-white shadow-xl rounded-2xl p-8 relative">
+        <div className="absolute top-6 right-6 cursor-pointer hover:bg-purple-100 rounded-full p-2 transition-all" onClick={() => navigate("/wma/schedules")}>
+            <CloseIcon className="text-purple-600" />
         </div>
-          <h2 className="text-2xl font-bold text-gray-700 mb-6">
-            Update Schedule Details
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            Schedule Information
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-600 font-medium">Wast Management Authority</label>
+                <label className="block text-gray-700 font-semibold mb-2">Waste Management Authority</label>
                 <input
                 type="text"
                 value={wma.wmaname} 
                 readOnly
-                className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-gray-50"/>
+                className="block w-full p-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"/>
               </div>
               <div>
-                <label className="block text-gray-600 font-medium">
-                Collector
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Collector <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={collector._id} 
                   onChange={(e) => setCollector(e.target.value)}
-                  className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-white">
+                  className="block w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-gray-700">
                     <option value="" disabled>Select Waste Collector</option>
                     {filteredCollectors.map((collector)=>{
                       return(
@@ -102,17 +117,17 @@ const ScheduleUpdate = () => {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-600 font-medium">Area</label>
+                <label className="block text-gray-700 font-semibold mb-2">Area</label>
                 <input
                 type="text"
                 value={area} 
                 readOnly
-                className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-gray-50"/>
+                className="block w-full p-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"/>
               </div>
               <div>
-              <label className="block text-gray-600 font-medium">
+              <label className="block text-gray-700 font-semibold mb-2">
                 Scheduled Date
               </label>
               <input
@@ -121,32 +136,32 @@ const ScheduleUpdate = () => {
                 readOnly
                 min={new Date().toISOString().split("T")[0]} 
                 max={new Date(new Date().setDate(new Date().getDate() + 14)).toISOString().split("T")[0]}
-                className="mt-2 block w-full p-[10px] border border-gray-300 rounded-lg bg-gray-50"
+                className="block w-full p-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"
               />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-600 font-medium">
-                Scheduled Time
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Scheduled Time
                 </label>
                 <input
                   type="time"
                   value={time}
-                readOnly
+                  readOnly
                   min="09:00"
                   max="17:00" 
-                  className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
+                  className="block w-full p-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"
                 />
               </div>
               <div>
-                <label className="block text-gray-600 font-medium">
-                  Status
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Status <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={status}
                   onChange={(e)=> setStatus(e.target.value)}                  
-                  className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700"
+                  className="block w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-gray-700"
                 >
                     <option value="Pending">Pending</option>
                     <option value="In Progress">In Progress</option>
@@ -154,10 +169,17 @@ const ScheduleUpdate = () => {
                 </select> 
               </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => navigate("/wma/schedules")}
+                className="px-6 py-3 border-2 border-purple-500 text-purple-600 rounded-xl font-semibold hover:bg-purple-50 transition-all"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                className="py-3 px-8 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 focus:ring-4 focus:ring-green-400"
+                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-xl font-semibold hover:shadow-xl hover:scale-105 transition-all shadow-lg"
               >
                 Update Status
               </button>
@@ -165,7 +187,26 @@ const ScheduleUpdate = () => {
           </form>
         </div>
       </div>
-      <ToastContainer />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastClassName="!bg-white !shadow-2xl !rounded-2xl !border-l-4 !border-purple-500"
+        bodyClassName="text-gray-800 font-medium"
+        progressClassName="!bg-gradient-to-r !from-purple-600 !to-indigo-700"
+        closeButton={
+          <button className="text-gray-400 hover:text-gray-600 transition-colors">
+            ✕
+          </button>
+        }
+      />
     </WMADrawer>
   );
 };

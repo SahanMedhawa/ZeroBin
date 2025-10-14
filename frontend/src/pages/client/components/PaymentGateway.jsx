@@ -188,9 +188,9 @@ const PaymentGateway = ({ onSubmitPayment, onClose }) => {
         <p className="mt-6 flex justify-center font-light text-sm text-gray-400">
           powered by&nbsp;
           <div className="flex items-center gap-1 cursor-pointer">
-            <PaidIcon fontSize="small" className="text-gray-500" />
-            <span className="underline text-gray-700 font-bold">
-              CleanPathPay
+            <PaidIcon fontSize="small" className="text-emerald-500" />
+            <span className="underline bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent font-bold">
+              ZeroBinPay
             </span>
           </div>
         </p>

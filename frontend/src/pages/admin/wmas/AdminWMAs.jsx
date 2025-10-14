@@ -112,7 +112,7 @@ function AdminWMAs() {
       doc.setFont("helvetica", "bold");
       doc.setTextColor("48752c");
       doc.setFontSize(16);
-      doc.text("CleanPath Waste Management System", 95, 18);
+      doc.text("ZeroBin Waste Management System", 95, 18);
 
       doc.setFont("helvetica", "normal");
       doc.setTextColor("000000");
@@ -142,7 +142,7 @@ function AdminWMAs() {
           doc.internal.pageSize.getHeight() - 10
         );
         doc.text(
-          "CleanPath Waste Management System - Confidential",
+          "ZeroBin Waste Management System - Confidential",
           14,
           doc.internal.pageSize.getHeight() - 10
         );

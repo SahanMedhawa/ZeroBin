@@ -1,4 +1,5 @@
 import WMA from "../models/wmaModel.js";
+import Area from "../models/areaModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import bcrypt from "bcryptjs";
 import { generateToken, generateWMAToken } from "../utils/createToken.js";
@@ -330,6 +331,86 @@ const updateWMAById = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/wmas/service-areas
+ * @desc    Get WMA's serviced areas
+ * @access  Private
+ */
+const getWMAServiceAreas = asyncHandler(async (req, res) => {
+  const wma = await WMA.findById(req.wma._id).populate('servicedAreas');
+  
+  if (wma) {
+    res.json(wma.servicedAreas || []);
+  } else {
+    res.status(404);
+    throw new Error("WMA not found!");
+  }
+});
+
+/**
+ * @route   POST /api/wmas/service-areas/:areaId
+ * @desc    Add an area to WMA's service areas
+ * @access  Private
+ */
+const addServiceArea = asyncHandler(async (req, res) => {
+  const { areaId } = req.params;
+  
+  const area = await Area.findById(areaId);
+  if (!area) {
+    res.status(404);
+    throw new Error("Area not found!");
+  }
+
+  const wma = await WMA.findById(req.wma._id);
+  
+  if (wma) {
+    // Check if area is already in serviced areas
+    if (wma.servicedAreas.includes(areaId)) {
+      res.status(400);
+      throw new Error("Area already in service areas!");
+    }
+    
+    wma.servicedAreas.push(areaId);
+    await wma.save();
+    
+    const updatedWma = await WMA.findById(req.wma._id).populate('servicedAreas');
+    res.json({
+      message: "Service area added successfully!",
+      servicedAreas: updatedWma.servicedAreas
+    });
+  } else {
+    res.status(404);
+    throw new Error("WMA not found!");
+  }
+});
+
+/**
+ * @route   DELETE /api/wmas/service-areas/:areaId
+ * @desc    Remove an area from WMA's service areas
+ * @access  Private
+ */
+const removeServiceArea = asyncHandler(async (req, res) => {
+  const { areaId } = req.params;
+  
+  const wma = await WMA.findById(req.wma._id);
+  
+  if (wma) {
+    wma.servicedAreas = wma.servicedAreas.filter(
+      (area) => area.toString() !== areaId
+    );
+    await wma.save();
+    
+    const updatedWma = await WMA.findById(req.wma._id).populate('servicedAreas');
+    res.json({
+      message: "Service area removed successfully!",
+      servicedAreas: updatedWma.servicedAreas
+    });
+  } else {
+    res.status(404);
+    throw new Error("WMA not found!");
+  }
+});
+
 export {
     createWMA,
   loginWMA,
@@ -340,4 +421,7 @@ export {
   deleteWMAById,
   getWMAById,
   updateWMAById,
+  getWMAServiceAreas,
+  addServiceArea,
+  removeServiceArea,
 };
