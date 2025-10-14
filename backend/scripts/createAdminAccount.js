@@ -1,9 +1,15 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import User from '../models/userModel.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load .env from root directory
+dotenv.config({ path: join(__dirname, '../../.env') });
 
 const createAdminAccount = async () => {
   try {
@@ -39,6 +45,7 @@ const createAdminAccount = async () => {
       username: adminData.username,
       email: adminData.email,
       password: hashedPassword,
+      role: 'Admin',
       isAdmin: true,
       area: null,
     });

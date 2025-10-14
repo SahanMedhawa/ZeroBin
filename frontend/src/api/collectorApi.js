@@ -2,10 +2,13 @@ import API from "../helpers/apiHelper";
 
 const createCollector = async (collector) => {
   try {
+    console.log("API call: Creating collector with data:", collector);
     const createdCollector = await new API().post("collector", collector);
+    console.log("API response:", createdCollector);
     return createdCollector;
   } catch (error) {
-    console.error("Error creating collector:", error.message);
+    console.error("Error creating collector in API:", error);
+    console.error("Error message:", error.message);
     throw error; // Rethrow the error for the component to handle
   }
 };

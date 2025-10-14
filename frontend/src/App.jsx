@@ -26,9 +26,7 @@ import WMACollectors from "./pages/wma/collectors/ViewCollectors";
 import WMAProfile from "./pages/wma/profile/WMAProfile";
 import WMASchedules from "./pages/wma/schedule/ViewSchedules";
 import WMATransaction from "./pages/wma/transaction/WMATransaction";
-import AdminSchedule from "./pages/admin/schedule/AdminSchedule";
-import AdminScheduleUpdate from "./pages/admin/schedule/AdminScheduleUpdate";
-import AdminScheduleCreate from "./pages/admin/schedule/AdminScheduleCreateForm";
+import CreateSchedule from "./pages/wma/schedule/CreateSchedule";
 import AdminCollectors from "./pages/admin/collectors/AdmonCollectors";
 import AdminCollectorUpdate from "./pages/admin/collectors/AdminCollectorUpdate";
 import WmaCollectorUpdate from "./pages/wma/collectors/UpdateCollector";
@@ -45,6 +43,8 @@ import CollectorMap from "./pages/collector/map/CollectorMap";
 import CollectorScanner from "./pages/collector/scanner/CollectorScanner";
 import CollectorEarnings from "./pages/collector/earnings/CollectorEarnings";
 import UpdateGarbage from "./pages/collector/updateGarbage/UpdateGarbage";
+import AdminAreaManagement from "./pages/admin/areas/AdminAreaManagement";
+import WMAServiceAreas from "./pages/wma/areas/WMAServiceAreas";
 
 function App() {
   return (
@@ -78,6 +78,7 @@ function App() {
 
           {/* Protected WMA Routes */}
           <Route path="/wma/dashboard" element={<ProtectedRoute><WMADashboard /></ProtectedRoute>} />
+          <Route path="/wma/service-areas" element={<ProtectedRoute><WMAServiceAreas /></ProtectedRoute>} />
           <Route path="/wma/collectors" element={<ProtectedRoute><WMACollectors /></ProtectedRoute>} />
           <Route
             path="/wma/collectors/update"
@@ -91,6 +92,10 @@ function App() {
           <Route
             path="/wma/schedules/update"
             element={<ProtectedRoute><ScheduleUpdate /></ProtectedRoute>}
+          />
+          <Route
+            path="/wma/schedules/create"
+            element={<ProtectedRoute><CreateSchedule /></ProtectedRoute>}
           />
           <Route path="/wma/schedules" element={<ProtectedRoute><WMASchedules /></ProtectedRoute>} />
           <Route path="/wma/profile" element={<ProtectedRoute><WMAProfile /></ProtectedRoute>} />
@@ -106,6 +111,7 @@ function App() {
 
           {/* Protected Admin routes */}
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/areas" element={<ProtectedRoute><AdminAreaManagement /></ProtectedRoute>} />
           <Route path="/admin/garbage" element={<ProtectedRoute><AdminGarbage /></ProtectedRoute>} />
           <Route
             path="/admin/garbage/update"
@@ -114,15 +120,6 @@ function App() {
           <Route
             path="/admin/transactions"
             element={<ProtectedRoute><AdminTransactions /></ProtectedRoute>}
-          />
-          <Route path="/admin/schedules" element={<ProtectedRoute><AdminSchedule /></ProtectedRoute>} />
-          <Route
-            path="/admin/schedules/update"
-            element={<ProtectedRoute><AdminScheduleUpdate /></ProtectedRoute>}
-          />
-          <Route
-            path="/admin/schedules/create"
-            element={<ProtectedRoute><AdminScheduleCreate /></ProtectedRoute>}
           />
           <Route path="/admin/collectors" element={<ProtectedRoute><AdminCollectors /></ProtectedRoute>} />
           <Route

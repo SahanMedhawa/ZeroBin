@@ -35,17 +35,30 @@ const WmaCollectorUpdate = () => {
   useEffect(() => {
     let isValid = true;
 
-    if (contactNo.length !== 10) {
-      setFormError('Invalid Contact Number');
+    // Check if all required fields are filled
+    if (!collectorName || collectorName.trim().length === 0) {
+      setFormError('Collector Name is required');
       isValid = false;
-    } else if (collectorNIC.length >= 0 && !/^\d{12}$|^\d{10}V$/.test(collectorNIC)) {
-      setFormError('Invalid Collector NIC');
+    } else if (!/^[a-zA-Z\s]+$/.test(collectorName)) {
+      setFormError('Invalid Collector Name (only letters and spaces allowed)');
       isValid = false;
-    } else if (collectorName.length >= 0 && !/^[a-zA-Z\s]+$/.test(collectorName)) {
-      setFormError('Invalid Collector Name');
+    } else if (!collectorNIC || collectorNIC.trim().length === 0) {
+      setFormError('Collector NIC is required');
       isValid = false;
-    } else if (truckNumber.length >= 0 && !/^[a-zA-Z0-9]*$/.test(truckNumber)) {
-      setFormError('Invalid Truck Number');
+    } else if (!/^\d{12}$|^\d{9}V$/.test(collectorNIC)) {
+      setFormError('Invalid Collector NIC (12 digits or 9 digits with V)');
+      isValid = false;
+    } else if (!contactNo || contactNo.length === 0) {
+      setFormError('Contact Number is required');
+      isValid = false;
+    } else if (contactNo.length !== 10) {
+      setFormError('Contact Number must be 10 digits');
+      isValid = false;
+    } else if (!truckNumber || truckNumber.trim().length === 0) {
+      setFormError('Truck Number is required');
+      isValid = false;
+    } else if (!/^[a-zA-Z0-9]+$/.test(truckNumber)) {
+      setFormError('Invalid Truck Number (alphanumeric only)');
       isValid = false;
     } else {
       setFormError('');
@@ -139,12 +152,13 @@ const WmaCollectorUpdate = () => {
                 <input
                 value={collectorNIC} 
                 onChange={(e) => {
-                  const input = e.target.value;
-                  if (/^\d{0,12}$/.test(input) || /^\d{10}V$/.test(input)) {
+                  const input = e.target.value.toUpperCase();
+                  // Allow: up to 12 digits, or up to 9 digits followed by V
+                  if (/^\d{0,12}$/.test(input) || /^\d{0,9}V?$/.test(input)) {
                     setCollectorNIC(input);
                   }
                 }}
-                placeholder="Enter NIC (12 digits or 10 digits with V)"
+                placeholder="Enter NIC (12 digits or 9 digits with V)"
                 className="block w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"/>
               </div>
               <div>

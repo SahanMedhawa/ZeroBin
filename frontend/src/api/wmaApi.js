@@ -69,9 +69,7 @@ class WmaAuthService {
 
   async deleteWma(id) {
     try {
-      const deletedWma = await this.api.delete(`wmas/${id}`, {
-        withCredentials: true,
-      });
+      const deletedWma = await this.api.delete(`wmas/${id}`);
       return deletedWma.data;
     } catch (error) {
       console.error("Error deleting wma:", error.message);
@@ -118,6 +116,58 @@ class WmaAuthService {
 
   getWmaId() {
     return localStorage.getItem("wmaId");
+  }
+
+  /**
+   * Get WMA's serviced areas
+   * @returns {Promise<Array>} List of serviced areas
+   */
+  async getWMAServiceAreas() {
+    try {
+      const response = await this.api.get("wmas/service-areas", {
+        withCredentials: true,
+      });
+      return response;
+    } catch (error) {
+      console.error("Error fetching WMA service areas:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add an area to WMA's service areas
+   * @param {string} areaId - The ID of the area to add
+   * @returns {Promise<Object>} Updated service areas
+   */
+  async addServiceArea(areaId) {
+    try {
+      const response = await this.api.post(
+        `wmas/service-areas/${areaId}`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      return response;
+    } catch (error) {
+      console.error("Error adding service area:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove an area from WMA's service areas
+   * @param {string} areaId - The ID of the area to remove
+   * @returns {Promise<Object>} Updated service areas
+   */
+  async removeServiceArea(areaId) {
+    try {
+      const response = await this.api.delete(`wmas/service-areas/${areaId}`);
+      return response;
+    } catch (error) {
+      console.error("Error removing service area:", error);
+      throw error;
+    }
   }
 }
 

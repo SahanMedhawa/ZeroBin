@@ -155,7 +155,7 @@ const getAllWMAs = asyncHandler(async (req, res) => {
  * @throws  {500} If a server error occurs
  */
 const getCurrentWMAProfile = asyncHandler(async (req, res) => {
-  const wma = await WMA.findById(req.wma._id);
+  const wma = await WMA.findById(req.wma._id).populate('servicedAreas');
   if (wma) {
     res.json({
       _id: wma._id,
@@ -165,6 +165,7 @@ const getCurrentWMAProfile = asyncHandler(async (req, res) => {
       profileImage: wma.profileImage,
       authNumber: wma.authNumber,
       email: wma.email,
+      servicedAreas: wma.servicedAreas,
     });
   } else {
     res.status(404);
