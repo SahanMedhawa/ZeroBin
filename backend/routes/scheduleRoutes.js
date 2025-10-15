@@ -7,7 +7,8 @@ import {
     updateSchedule,
     updateScheduleStatus,
     deleteSchedule,
-    getSchedulesByWma
+    getSchedulesByWma,
+    getActiveSchedules
 } from "../controllers/scheduleController.js";
 import { authenticateWMA, authenticateCollector } from "../middlewares/authMiddleware.js";
 
@@ -27,6 +28,9 @@ router.route("/:id/status").put(authenticateCollector, updateScheduleStatus);
 
 // Get schedules by WMA ID
 router.route("/wma-schedules/:id").get(getSchedulesByWma);
+
+// Get active schedules (In Progress status)
+router.route("/active").get(getActiveSchedules);
 
 // Schedule CRUD operations (WMA authenticated)
 router

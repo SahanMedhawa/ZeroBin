@@ -3,8 +3,10 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import CollectorDrawer from '../components/CollectorDrawer';
+import GrievanceMarker from '../grievances/components/GrievanceMarker';
 import { getCollectorSchedules } from '../../../api/collectorApi';
 import { getFullBinsForCollector } from '../../../api/garbageApi';
+import { getAssignedGrievances } from '../../../api/grievanceApi';
 import { toast } from 'react-toastify';
 
 // Fix for default marker icons in React Leaflet
@@ -63,12 +65,15 @@ const CollectorMap = () => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [garbages, setGarbages] = useState([]);
+  const [grievances, setGrievances] = useState([]);
   const [inProgressSchedule, setInProgressSchedule] = useState(null);
   const [mapCenter, setMapCenter] = useState([6.9271, 79.8612]); // Default: Colombo
+  const [focusedGrievance, setFocusedGrievance] = useState(null);
   const watchIdRef = useRef(null);
 
   useEffect(() => {
     fetchSchedules();
+    fetchGrievances();
     
     // Auto-enable location if it was previously enabled
     const savedPreference = localStorage.getItem('collectorMapLocationEnabled');
@@ -82,6 +87,30 @@ const CollectorMap = () => {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
+  }, []);
+
+  // Handle URL parameters for focusing on specific grievance
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const focusGrievance = urlParams.get('focus');
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    
+    if (focusGrievance && lat && lng) {
+      // Center map on the specific grievance location
+      setMapCenter([parseFloat(lat), parseFloat(lng)]);
+      setFocusedGrievance(focusGrievance);
+      
+      // Show a toast notification
+      toast.info(`Focused on grievance ${focusGrievance}`, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      
+      // Clean up URL parameters
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
   }, []);
 
   const fetchSchedules = async () => {
@@ -127,6 +156,38 @@ const CollectorMap = () => {
       console.error('Error fetching full bins:', error);
       toast.error('Unable to load bin locations.');
     }
+  };
+
+  const fetchGrievances = async () => {
+    try {
+      const response = await getAssignedGrievances();
+      const grievancesData = response.grievances || response || [];
+      
+      // Filter grievances that have coordinates and are not resolved
+      const grievancesWithCoords = grievancesData.filter(grievance => 
+        grievance.garbageId?.latitude && 
+        grievance.garbageId?.longitude && 
+        grievance.status !== 'Resolved'
+      );
+      
+      setGrievances(grievancesWithCoords);
+    } catch (error) {
+      console.error('Error fetching grievances:', error);
+      toast.error('Failed to load grievances');
+    }
+  };
+
+  const handleGrievanceResolved = (grievanceId) => {
+    // Remove the resolved grievance from the list
+    setGrievances(prev => prev.filter(g => g._id !== grievanceId));
+    
+    // Clear focus if the focused grievance was resolved
+    if (focusedGrievance === grievanceId) {
+      setFocusedGrievance(null);
+    }
+    
+    // Show success message
+    toast.success('Grievance resolved and bin collected successfully!');
   };
 
   const enableLocationTracking = () => {
@@ -263,6 +324,16 @@ const CollectorMap = () => {
               </Marker>
             );
           })}
+
+          {/* Grievance Markers */}
+          {grievances.map((grievance) => (
+            <GrievanceMarker 
+              key={grievance._id} 
+              grievance={grievance} 
+              isFocused={focusedGrievance === grievance._id}
+              onGrievanceResolved={handleGrievanceResolved}
+            />
+          ))}
         </MapContainer>
 
         {/* Location Toggle Button */}
@@ -287,6 +358,46 @@ const CollectorMap = () => {
             </svg>
           </button>
         </div>
+
+        {/* Start Navigation Button for Focused Grievance */}
+        {focusedGrievance && (
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-[1000]">
+            <button
+              onClick={() => {
+                const focusedGrievanceData = grievances.find(g => g._id === focusedGrievance);
+                if (focusedGrievanceData?.garbageId?.latitude && focusedGrievanceData?.garbageId?.longitude) {
+                  const lat = focusedGrievanceData.garbageId.latitude;
+                  const lng = focusedGrievanceData.garbageId.longitude;
+                  
+                  // Detect if user is on mobile device
+                  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                  
+                  if (isMobile) {
+                    // Try to open in Google Maps app first, fallback to web
+                    const googleMapsAppUrl = `google.navigation:q=${lat},${lng}`;
+                    const googleMapsWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+                    
+                    // Try to open in app, if it fails, open in browser
+                    window.location.href = googleMapsAppUrl;
+                    setTimeout(() => {
+                      window.open(googleMapsWebUrl, '_blank');
+                    }, 1000);
+                  } else {
+                    // Desktop - open in new tab
+                    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+                    window.open(googleMapsUrl, '_blank');
+                  }
+                }
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors flex items-center space-x-2 shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>Start Navigation</span>
+            </button>
+          </div>
+        )}
 
         {/* Current Route Info */}
         {locationEnabled && inProgressSchedule && (

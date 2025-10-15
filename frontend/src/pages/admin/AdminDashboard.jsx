@@ -7,6 +7,7 @@ import { getAllCollectors } from "../../api/collectorApi";
 import { getAllTransactions } from "../../api/transactionApi";
 import { getAllAreas } from "../../api/areaApi";
 import WmaAuthService from "../../api/wmaApi";
+import { getGrievanceStatistics } from "../../api/grievanceApi";
 import { toast } from "react-toastify";
 
 const AdminDashboard = () => {
@@ -16,6 +17,12 @@ const AdminDashboard = () => {
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [totalWMAs, setTotalWMAs] = useState(0);
   const [totalAreas, setTotalAreas] = useState(0);
+  const [grievanceStats, setGrievanceStats] = useState({
+    total: 0,
+    open: 0,
+    critical: 0,
+    escalated: 0
+  });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -23,13 +30,14 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [usersRes, garbagesRes, collectorsRes, transactionsRes, wmasRes, areasRes] = await Promise.all([
+        const [usersRes, garbagesRes, collectorsRes, transactionsRes, wmasRes, areasRes, grievanceStatsRes] = await Promise.all([
           AuthService.getAllUsers(),
           getAllGarbages(),
           getAllCollectors(),
           getAllTransactions(),
           WmaAuthService.getAllWmas(),
           getAllAreas(),
+          getGrievanceStatistics(),
         ]);
 
         setTotalUsers(usersRes?.length || 0);
@@ -38,6 +46,11 @@ const AdminDashboard = () => {
         setTotalTransactions(transactionsRes?.length || 0);
         setTotalWMAs(wmasRes?.length || 0);
         setTotalAreas(areasRes?.length || 0);
+        
+        // Set grievance statistics
+        if (grievanceStatsRes?.success) {
+          setGrievanceStats(grievanceStatsRes.statistics);
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         toast.error("Failed to load dashboard data");
@@ -116,6 +129,28 @@ const AdminDashboard = () => {
       gradient: "from-cyan-500 to-blue-600",
       bgGradient: "from-cyan-50 to-blue-50",
     },
+    {
+      title: "Total Grievances",
+      value: grievanceStats.total,
+      icon: (
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+      ),
+      gradient: "from-yellow-500 to-orange-600",
+      bgGradient: "from-yellow-50 to-orange-50",
+    },
+    {
+      title: "Open Grievances",
+      value: grievanceStats.open,
+      icon: (
+        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      gradient: "from-red-500 to-red-600",
+      bgGradient: "from-red-50 to-red-100",
+    },
   ];
 
   const quickActions = [
@@ -163,6 +198,17 @@ const AdminDashboard = () => {
       ),
       color: "from-orange-500 to-amber-600",
     },
+    {
+      title: "Grievances",
+      description: "Manage citizen complaints",
+      href: "/admin/grievances",
+      icon: (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+      ),
+      color: "from-red-500 to-pink-600",
+    },
   ];
 
   const recentActivities = [
@@ -174,10 +220,24 @@ const AdminDashboard = () => {
       status: "success"
     },
     {
+      action: "Critical grievance reported",
+      user: "Sarah Wilson",
+      time: "8 minutes ago",
+      type: "grievance",
+      status: "warning"
+    },
+    {
       action: "Garbage collection completed",
       user: "Collector #C001",
       time: "15 minutes ago",
       type: "garbage",
+      status: "success"
+    },
+    {
+      action: "Grievance resolved",
+      user: "Collector #C003",
+      time: "45 minutes ago",
+      type: "grievance",
       status: "success"
     },
     {
@@ -193,6 +253,13 @@ const AdminDashboard = () => {
       time: "2 hours ago",
       type: "transaction",
       status: "success"
+    },
+    {
+      action: "Route optimization triggered",
+      user: "Admin",
+      time: "2.5 hours ago",
+      type: "grievance",
+      status: "info"
     },
     {
       action: "Area coverage expanded",

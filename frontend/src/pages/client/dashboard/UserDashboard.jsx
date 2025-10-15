@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import UserDrawer from "../components/UserDrawer";
 import SliderComponent from "../components/Slider";
-import { DollarSign, TrendingUp, Trash, CreditCard } from "lucide-react";
+import { DollarSign, TrendingUp, Trash, CreditCard, AlertTriangle } from "lucide-react";
 import { getUserTransactions } from "../../../api/transactionApi";
 import { getUserAllGarbages } from "../../../api/garbageApi";
 
 const UserDashboard = () => {
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
   const [paidTransactions, setPaidTransactions] = useState([]);
   const [garbageCount, setGarbageCount] = useState(0);
@@ -90,10 +92,57 @@ const UserDashboard = () => {
     <UserDrawer>
       <div className="p-6 bg-gray-100">
         <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {metrics.map((metric, index) => (
             <MetricCard key={index} {...metric} />
           ))}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <button
+              onClick={() => navigate("/user/my-bin")}
+              className="flex items-center space-x-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+            >
+              <div className="p-2 bg-blue-600 rounded-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-gray-900">Manage Smart Bin</p>
+                <p className="text-sm text-gray-600">Control sensor & view history</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate("/user/grievances/create")}
+              className="flex items-center space-x-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors"
+            >
+              <div className="p-2 bg-red-600 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-gray-900">Report Issue</p>
+                <p className="text-sm text-gray-600">Submit collection grievance</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate("/user/my-transaction")}
+              className="flex items-center space-x-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
+            >
+              <div className="p-2 bg-green-600 rounded-lg">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-gray-900">View Transactions</p>
+                <p className="text-sm text-gray-600">Payment history & bills</p>
+              </div>
+            </button>
+          </div>
         </div>
 
         <SliderComponent />

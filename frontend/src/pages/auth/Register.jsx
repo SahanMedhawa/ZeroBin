@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthService from "../../api/userApi";
 import { getAllAreas } from "../../api/areaApi";
 import { toast } from "react-toastify";
 import WMARegister from "../wma/auth/WMARegister";
+import { SRI_LANKAN_DISTRICTS } from "../../constants/districts";
 
 const Register = () => {
   const [errorMessage, setErrorMessage] = useState(null);
@@ -28,6 +29,13 @@ const Register = () => {
     userEntryData;
   const [areas, setAreas] = useState([]); // State to store areas fetched from the API
   const [areaId, setAreaId] = useState(null); // State for storing selected area ID
+  const [selectedDistrict, setSelectedDistrict] = useState(""); // State for district filter
+
+  // Filter areas based on selected district
+  const filteredAreas = useMemo(() => {
+    if (!selectedDistrict) return areas;
+    return areas.filter(area => area.district === selectedDistrict);
+  }, [areas, selectedDistrict]);
 
   const fetchAllAreas = async () => {
     try {
@@ -242,28 +250,67 @@ const Register = () => {
                       </div>
 
                       <div>
+                        <label htmlFor="district" className="block text-sm font-semibold text-gray-700 mb-2">
+                          District
+                        </label>
+                        <select
+                          name="district"
+                          id="district"
+                          value={selectedDistrict}
+                          onChange={(e) => {
+                            setSelectedDistrict(e.target.value);
+                            setAreaId(null); // Reset area when district changes
+                          }}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                          required
+                        >
+                          <option value="">Select your district first</option>
+                          {SRI_LANKAN_DISTRICTS.map((district) => (
+                            <option key={district} value={district}>
+                              {district}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
                         <label htmlFor="area" className="block text-sm font-semibold text-gray-700 mb-2">
-                          Area
+                          Area {selectedDistrict && `(${filteredAreas.length} available)`}
                         </label>
                         <select
                           name="area"
                           id="area"
-                          value={areaId}
+                          value={areaId || ""}
                           onChange={(e) => setAreaId(e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           required
+                          disabled={!selectedDistrict}
                         >
-                          <option value="">Select your area</option>
-                          {areas && areas.length > 0 ? (
-                            areas.map((areaItem) => (
+                          <option value="">
+                            {!selectedDistrict 
+                              ? "Please select a district first" 
+                              : filteredAreas.length === 0 
+                              ? "No areas available in this district"
+                              : "Select your area"}
+                          </option>
+                          {filteredAreas && filteredAreas.length > 0 && 
+                            filteredAreas.map((areaItem) => (
                               <option key={areaItem._id} value={areaItem._id}>
                                 {areaItem.name}
                               </option>
                             ))
-                          ) : (
-                            <option>No areas available</option>
-                          )}
+                          }
                         </select>
+                        {!selectedDistrict && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            Select a district to view available areas
+                          </p>
+                        )}
+                        {selectedDistrict && filteredAreas.length === 0 && (
+                          <p className="mt-1 text-xs text-amber-600">
+                            No service areas available in {selectedDistrict} yet
+                          </p>
+                        )}
                       </div>
                     </div>
 
