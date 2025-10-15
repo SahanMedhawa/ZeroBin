@@ -40,8 +40,7 @@ import CollectorLogin from "./pages/collector/auth/CollectorLogin";
 import CollectorLoginRedirect from "./pages/collector/auth/CollectorLoginRedirect";
 import CollectorDashboard from "./pages/collector/dashboard/CollectorDashboard";
 import CollectorSchedule from "./pages/collector/schedule/CollectorSchedule";
-// Removed: Old smart device pages - Dead code (replaced by FullBinsCollector)
-// import CollectorMap from "./pages/collector/map/CollectorMap";
+import CollectorMap from "./pages/collector/map/CollectorMap";
 import CollectorScanner from "./pages/collector/scanner/CollectorScanner";
 import CollectorEarnings from "./pages/collector/earnings/CollectorEarnings";
 // import UpdateGarbage from "./pages/collector/updateGarbage/UpdateGarbage";
@@ -111,8 +110,7 @@ function App() {
           <Route path="/collector/dashboard" element={<CollectorProtectedRoute><CollectorDashboard /></CollectorProtectedRoute>} />
           <Route path="/collector/full-bins" element={<CollectorProtectedRoute><FullBinsCollector /></CollectorProtectedRoute>} />
           <Route path="/collector/schedule" element={<CollectorProtectedRoute><CollectorSchedule /></CollectorProtectedRoute>} />
-          {/* Removed: Old smart device map - replaced by FullBinsCollector map view */}
-          {/* <Route path="/collector/map" element={<CollectorProtectedRoute><CollectorMap /></CollectorProtectedRoute>} /> */}
+          <Route path="/collector/map" element={<CollectorProtectedRoute><CollectorMap /></CollectorProtectedRoute>} />
           <Route path="/collector/scanner" element={<CollectorProtectedRoute><CollectorScanner /></CollectorProtectedRoute>} />
           <Route path="/collector/earnings" element={<CollectorProtectedRoute><CollectorEarnings /></CollectorProtectedRoute>} />
           {/* Removed: Old updateGarbage - replaced by FullBinsCollector collection */}

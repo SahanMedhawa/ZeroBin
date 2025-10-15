@@ -106,9 +106,10 @@ const logoutCollector = async () => {
 };
 
 // Schedule APIs
-const getCollectorSchedules = async () => {
+const getCollectorSchedules = async (options = {}) => {
   try {
-    const schedules = await new API().get("schedule/collector-schedules");
+    // options can include: { limit, fields, status }
+    const schedules = await new API().get("schedule/collector-schedules", options);
     return schedules;
   } catch (error) {
     console.error("Error fetching collector schedules:", error.message);
