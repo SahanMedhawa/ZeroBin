@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import CollectorDrawer from '../components/CollectorDrawer';
 import GrievanceMarker from '../grievances/components/GrievanceMarker';
 import { getCollectorSchedules } from '../../../api/collectorApi';
-import { getFullBinsForCollector } from '../../../api/garbageApi';
+import { getFullBinsForCollector, markBinCollected } from '../../../api/garbageApi';
 import { getAssignedGrievances } from '../../../api/grievanceApi';
 import { toast } from 'react-toastify';
 
@@ -66,6 +66,7 @@ const CollectorMap = () => {
   const [schedules, setSchedules] = useState([]);
   const [garbages, setGarbages] = useState([]);
   const [grievances, setGrievances] = useState([]);
+  const [collectingBin, setCollectingBin] = useState(null);
   const [inProgressSchedule, setInProgressSchedule] = useState(null);
   const [mapCenter, setMapCenter] = useState([6.9271, 79.8612]); // Default: Colombo
   const [focusedGrievance, setFocusedGrievance] = useState(null);
@@ -190,6 +191,23 @@ const CollectorMap = () => {
     toast.success('Grievance resolved and bin collected successfully!');
   };
 
+  const handleCollectBin = async (bin) => {
+    try {
+      setCollectingBin(bin._id);
+      await markBinCollected(bin._id);
+      toast.success('Bin collected successfully!');
+      
+      // Refresh the bins data
+      const response = await getFullBinsForCollector();
+      setGarbages(response.bins || response || []);
+    } catch (error) {
+      console.error('Error collecting bin:', error);
+      toast.error(error.response?.data?.message || 'Failed to collect bin');
+    } finally {
+      setCollectingBin(null);
+    }
+  };
+
   const enableLocationTracking = () => {
     // Clear any existing watch first to prevent multiple watches
     if (watchIdRef.current) {
@@ -298,6 +316,10 @@ const CollectorMap = () => {
             // Skip bins without location
             if (!bin.latitude || !bin.longitude) return null;
             
+            // Only show bins over 50% fill level
+            const fillPercentage = bin.sensorData?.fillPercentage || 0;
+            if (fillPercentage < 50) return null;
+            
             // Determine icon based on fill level
             const fillLevel = bin.sensorData?.fillLevel;
             const icon = fillLevel === 'Full' ? redIcon : greenIcon;
@@ -312,13 +334,85 @@ const CollectorMap = () => {
                 icon={icon}
               >
                 <Popup>
-                  <div className="p-2">
-                    <p className="font-semibold">{bin.binId}</p>
-                    <p className="text-sm text-gray-600">Fill Level: {bin.sensorData?.fillLevel} ({bin.sensorData?.fillPercentage}%)</p>
-                    <p className="text-sm text-gray-600">Type: {bin.wasteType}</p>
-                    <p className="text-sm text-gray-600">Address: {bin.address}</p>
-                    <p className="text-sm text-gray-600">Area: {areaName}</p>
-                    <p className="text-sm text-gray-600">User: {bin.user?.username}</p>
+                  <div className="p-3 min-w-[250px]">
+                    <div className="font-semibold text-lg mb-3">{bin.binId}</div>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Fill Level:</span>
+                        <span className={`font-medium ${
+                          bin.sensorData?.fillLevel === 'Full' ? 'text-red-600' : 'text-orange-600'
+                        }`}>
+                          {bin.sensorData?.fillLevel} ({bin.sensorData?.fillPercentage}%)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Address:</span>
+                        <div className="font-medium">{bin.address}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Area:</span>
+                        <div className="font-medium">{areaName}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">User:</span>
+                        <div className="font-medium">{bin.user?.username}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          const lat = bin.latitude;
+                          const lng = bin.longitude;
+                          
+                          // Detect if user is on mobile device
+                          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                          
+                          if (isMobile) {
+                            // Try to open in Google Maps app first, fallback to web
+                            const googleMapsAppUrl = `google.navigation:q=${lat},${lng}`;
+                            const googleMapsWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+                            
+                            // Try to open in app, if it fails, open in browser
+                            window.location.href = googleMapsAppUrl;
+                            setTimeout(() => {
+                              window.open(googleMapsWebUrl, '_blank');
+                            }, 1000);
+                          } else {
+                            // Desktop - open in new tab
+                            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+                            window.open(googleMapsUrl, '_blank');
+                          }
+                        }}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <span>Start Navigation</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleCollectBin(bin)}
+                        disabled={collectingBin === bin._id}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                      >
+                        {collectingBin === bin._id ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Collecting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Collect Bin</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </Popup>
               </Marker>

@@ -6,6 +6,19 @@ import 'leaflet/dist/leaflet.css';
 import { getFullBinsForCollector, markBinCollected } from '../../../api/garbageApi';
 import CollectorDrawer from '../components/CollectorDrawer';
 
+// Constants
+const FULL_WEIGHT_OF_BIN = 5; // 5KG capacity
+const REFRESH_INTERVAL_MS = 30000; // 30 seconds
+const MAP_ZOOM_LEVEL = 13;
+const MAP_HEIGHT_PX = 600;
+const ICON_SIZE = 30;
+const ICON_ANCHOR_OFFSET = 15;
+const FONT_SIZE_SMALL = 11;
+const BORDER_WIDTH = 3;
+const SHADOW_BLUR = 8;
+const SHADOW_OPACITY = 0.15;
+const NAVIGATION_DELAY_MS = 1000;
+
 // Fix Leaflet default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -28,128 +41,37 @@ const createCustomIcon = (fillLevel) => {
     html: `
       <div style="
         background-color: ${color};
-        width: 30px;
-        height: 30px;
+        width: ${ICON_SIZE}px;
+        height: ${ICON_SIZE}px;
         border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border: ${BORDER_WIDTH}px solid white;
+        box-shadow: 0 2px ${SHADOW_BLUR}px rgba(0,0,0,${SHADOW_OPACITY});
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         font-weight: bold;
-        font-size: 11px;
+        font-size: ${FONT_SIZE_SMALL}px;
       ">
         ${fillLevel === 'Full' ? '100' : '75'}%
       </div>
     `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
+    iconSize: [ICON_SIZE, ICON_SIZE],
+    iconAnchor: [ICON_ANCHOR_OFFSET, ICON_ANCHOR_OFFSET],
   });
 };
 
-// Collect Bin Modal Component
-const CollectBinModal = ({ isOpen, onClose, bin, onCollected }) => {
-  const [weight, setWeight] = useState('');
-  const [collecting, setCollecting] = useState(false);
-
-  const handleCollect = async () => {
-    try {
-      setCollecting(true);
-      await markBinCollected(bin._id, weight ? parseFloat(weight) : undefined);
-      toast.success('✅ Bin collected successfully! Sensor reset to Empty.');
-      onCollected();
-      onClose();
-    } catch (error) {
-      console.error('Error collecting bin:', error);
-      toast.error(error.response?.data?.message || 'Failed to collect bin');
-    } finally {
-      setCollecting(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
-        <h3 className="text-xl font-semibold mb-4">Collect Bin</h3>
-        
-        <div className="space-y-3 mb-6">
-          <div>
-            <span className="text-sm text-gray-500">Bin ID:</span>
-            <p className="font-medium">{bin?.binId}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">Address:</span>
-            <p className="font-medium">{bin?.address}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-500">Fill Level:</span>
-            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ml-2 ${
-              bin?.sensorData?.fillLevel === 'Full' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
-            }`}>
-              {bin?.sensorData?.fillLevel}
-            </span>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Weight (kg) - Optional
-          </label>
-          <input
-            type="number"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-            placeholder="Enter weight if known"
-          />
-          <p className="text-xs text-gray-500 mt-1">Enter the collected garbage weight if known</p>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-          <p className="text-sm text-blue-800">
-            Marking this bin as collected will reset its sensor to "Empty" status.
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            disabled={collecting}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCollect}
-            disabled={collecting}
-            className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {collecting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Collecting...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Collect Bin
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+// Calculate weight based on bin capacity and fill percentage
+const calculateBinWeight = (bin) => {
+  const fillPercentage = bin.sensorData?.fillPercentage || 0;
+  return FULL_WEIGHT_OF_BIN * (fillPercentage / 100);
 };
 
 // Bin Card Component
-const BinCard = ({ bin, onCollectClick }) => {
+const BinCard = ({ bin, onCollectClick, collectingBin }) => {
   const fillColor = bin.sensorData.fillLevel === 'Full' ? 'bg-red-500' : 'bg-orange-500';
+  const calculatedWeight = calculateBinWeight(bin);
+  const isCollecting = collectingBin === bin._id;
   
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -158,9 +80,14 @@ const BinCard = ({ bin, onCollectClick }) => {
         <span className={`${fillColor} text-white px-3 py-1 rounded-full text-sm font-medium`}>
           {bin.sensorData.fillLevel}
         </span>
-        <span className="text-2xl font-bold text-gray-900">
-          {bin.sensorData.fillPercentage}%
-        </span>
+        <div className="text-right">
+          <span className="text-2xl font-bold text-gray-900">
+            {bin.sensorData.fillPercentage}%
+          </span>
+          <div className="text-sm text-gray-500">
+            Est. Weight: {calculatedWeight.toFixed(2)}kg
+          </div>
+        </div>
       </div>
 
       {/* Bin Details */}
@@ -213,12 +140,22 @@ const BinCard = ({ bin, onCollectClick }) => {
       {/* Collect Button */}
       <button
         onClick={() => onCollectClick(bin)}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+        disabled={isCollecting}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-        Collect Bin
+        {isCollecting ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Collecting...
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Collect Bin
+          </>
+        )}
       </button>
     </div>
   );
@@ -229,13 +166,12 @@ const FullBinsCollector = () => {
   const [loading, setLoading] = useState(true);
   const [fullBins, setFullBins] = useState([]);
   const [viewMode, setViewMode] = useState('list');
-  const [selectedBin, setSelectedBin] = useState(null);
-  const [collectModalOpen, setCollectModalOpen] = useState(false);
+  const [collectingBin, setCollectingBin] = useState(null);
   const [mapCenter, setMapCenter] = useState([6.9271, 79.8612]);
 
   useEffect(() => {
     loadFullBins();
-    const interval = setInterval(loadFullBins, 30000);
+    const interval = setInterval(loadFullBins, REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, []);
 
@@ -257,13 +193,24 @@ const FullBinsCollector = () => {
     }
   };
 
-  const handleCollectClick = (bin) => {
-    setSelectedBin(bin);
-    setCollectModalOpen(true);
-  };
-
-  const handleBinCollected = () => {
-    loadFullBins();
+  const handleCollectClick = async (bin) => {
+    try {
+      setCollectingBin(bin._id);
+      
+      // Calculate weight based on bin capacity and fill percentage
+      const calculatedWeight = calculateBinWeight(bin);
+      
+      await markBinCollected(bin._id, calculatedWeight);
+      toast.success(`✅ Bin collected successfully! Weight: ${calculatedWeight.toFixed(2)}kg`);
+      
+      // Refresh the bins data
+      loadFullBins();
+    } catch (error) {
+      console.error('Error collecting bin:', error);
+      toast.error(error.response?.data?.message || 'Failed to collect bin');
+    } finally {
+      setCollectingBin(null);
+    }
   };
 
   if (loading) {
@@ -354,6 +301,7 @@ const FullBinsCollector = () => {
                     key={bin._id}
                     bin={bin}
                     onCollectClick={handleCollectClick}
+                    collectingBin={collectingBin}
                   />
                 ))}
               </div>
@@ -362,10 +310,10 @@ const FullBinsCollector = () => {
             {/* Map View */}
             {viewMode === 'map' && (
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="h-[600px] relative">
+                <div className={`h-[${MAP_HEIGHT_PX}px] relative`}>
                   <MapContainer
                     center={mapCenter}
-                    zoom={13}
+                    zoom={MAP_ZOOM_LEVEL}
                     style={{ height: '100%', width: '100%' }}
                     key={`map-${fullBins.length}`}
                   >
@@ -408,12 +356,63 @@ const FullBinsCollector = () => {
                               )}
                             </div>
                             
-                            <button
-                              onClick={() => handleCollectClick(bin)}
-                              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-lg font-medium transition-colors"
-                            >
-                              Collect Bin
-                            </button>
+                            <div className="space-y-2">
+                              <div className="text-center text-sm text-gray-600 mb-2">
+                                Est. Weight: {calculateBinWeight(bin).toFixed(2)}kg
+                              </div>
+                              
+                              <button
+                                onClick={() => {
+                                  const lat = bin.latitude;
+                                  const lng = bin.longitude;
+                                  
+                                  // Detect if user is on mobile device
+                                  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                                  
+                                  if (isMobile) {
+                                    // Try to open in Google Maps app first, fallback to web
+                                    const googleMapsAppUrl = `google.navigation:q=${lat},${lng}`;
+                                    const googleMapsWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+                                    
+                                    // Try to open in app, if it fails, open in browser
+                                    window.location.href = googleMapsAppUrl;
+                                    setTimeout(() => {
+                                      window.open(googleMapsWebUrl, '_blank');
+                                    }, NAVIGATION_DELAY_MS);
+                                  } else {
+                                    // Desktop - open in new tab
+                                    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+                                    window.open(googleMapsUrl, '_blank');
+                                  }
+                                }}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                <span>Start Navigation</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => handleCollectClick(bin)}
+                                disabled={collectingBin === bin._id}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                              >
+                                {collectingBin === bin._id ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span>Collecting...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Collect Bin</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </Popup>
                       </Marker>
@@ -425,13 +424,6 @@ const FullBinsCollector = () => {
           </>
         )}
 
-        {/* Collect Modal */}
-        <CollectBinModal
-          isOpen={collectModalOpen}
-          onClose={() => setCollectModalOpen(false)}
-          bin={selectedBin}
-          onCollected={handleBinCollected}
-        />
       </div>
     </div>
   );
