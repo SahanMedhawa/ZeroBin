@@ -1,37 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Button,
-  Chip,
-  CircularProgress,
-  Alert,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  Divider,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-} from '@mui/material';
-import {
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon,
-  Map as MapIcon,
-  CheckCircle as CheckCircleIcon,
-  LocationOn as LocationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
-  Person as PersonIcon,
-} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -47,16 +14,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-/**
- * Custom marker icons based on fill level
- */
+// Custom marker icons
 const createCustomIcon = (fillLevel) => {
   const colors = {
-    Full: '#f44336',
-    High: '#ff9800',
+    Full: '#ef4444',
+    High: '#f59e0b',
   };
   
-  const color = colors[fillLevel] || '#f44336';
+  const color = colors[fillLevel] || '#ef4444';
   
   return L.divIcon({
     className: 'custom-marker',
@@ -67,13 +32,13 @@ const createCustomIcon = (fillLevel) => {
         height: 30px;
         border-radius: 50%;
         border: 3px solid white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         font-weight: bold;
-        font-size: 12px;
+        font-size: 11px;
       ">
         ${fillLevel === 'Full' ? '100' : '75'}%
       </div>
@@ -83,11 +48,8 @@ const createCustomIcon = (fillLevel) => {
   });
 };
 
-/**
- * CollectBinDialog Component
- * Dialog for marking a bin as collected
- */
-const CollectBinDialog = ({ open, onClose, bin, onCollected }) => {
+// Collect Bin Modal Component
+const CollectBinModal = ({ isOpen, onClose, bin, onCollected }) => {
   const [weight, setWeight] = useState('');
   const [collecting, setCollecting] = useState(false);
 
@@ -106,90 +68,184 @@ const CollectBinDialog = ({ open, onClose, bin, onCollected }) => {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Collect Bin</DialogTitle>
-      <DialogContent>
-        <Box mb={2}>
-          <Typography variant="body2" color="text.secondary">
-            Bin ID: <strong>{bin?.binId}</strong>
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Address: <strong>{bin?.address}</strong>
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Fill Level: <Chip label={bin?.sensorData?.fillLevel} size="small" color="error" />
-          </Typography>
-        </Box>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <h3 className="text-xl font-semibold mb-4">Collect Bin</h3>
+        
+        <div className="space-y-3 mb-6">
+          <div>
+            <span className="text-sm text-gray-500">Bin ID:</span>
+            <p className="font-medium">{bin?.binId}</p>
+          </div>
+          <div>
+            <span className="text-sm text-gray-500">Address:</span>
+            <p className="font-medium">{bin?.address}</p>
+          </div>
+          <div>
+            <span className="text-sm text-gray-500">Fill Level:</span>
+            <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ml-2 ${
+              bin?.sensorData?.fillLevel === 'Full' ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+            }`}>
+              {bin?.sensorData?.fillLevel}
+            </span>
+          </div>
+        </div>
 
-        <TextField
-          fullWidth
-          label="Weight (kg) - Optional"
-          type="number"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-          margin="normal"
-          helperText="Enter the collected garbage weight if known"
-        />
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Weight (kg) - Optional
+          </label>
+          <input
+            type="number"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            placeholder="Enter weight if known"
+          />
+          <p className="text-xs text-gray-500 mt-1">Enter the collected garbage weight if known</p>
+        </div>
 
-        <Alert severity="info" sx={{ mt: 2 }}>
-          Marking this bin as collected will reset its sensor to "Empty" status.
-        </Alert>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} disabled={collecting}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleCollect}
-          variant="contained"
-          color="primary"
-          disabled={collecting}
-          startIcon={collecting ? <CircularProgress size={20} /> : <CheckCircleIcon />}
-        >
-          {collecting ? 'Collecting...' : 'Collect Bin'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+          <p className="text-sm text-blue-800">
+            Marking this bin as collected will reset its sensor to "Empty" status.
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={collecting}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCollect}
+            disabled={collecting}
+            className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {collecting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Collecting...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Collect Bin
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
-/**
- * FullBinsCollector Component
- * Shows all full bins in collector's assigned areas with map and list view
- * Follows Single Responsibility Principle: Only displays and manages full bins collection
- */
+// Bin Card Component
+const BinCard = ({ bin, onCollectClick }) => {
+  const fillColor = bin.sensorData.fillLevel === 'Full' ? 'bg-red-500' : 'bg-orange-500';
+  
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <span className={`${fillColor} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+          {bin.sensorData.fillLevel}
+        </span>
+        <span className="text-2xl font-bold text-gray-900">
+          {bin.sensorData.fillPercentage}%
+        </span>
+      </div>
+
+      {/* Bin Details */}
+      <div className="space-y-3 mb-6">
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Bin ID</p>
+          <p className="font-medium text-gray-900">{bin.binId}</p>
+        </div>
+        
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            </svg>
+            Address
+          </p>
+          <p className="font-medium text-gray-900">{bin.address}</p>
+          <p className="text-sm text-gray-500">{bin.area?.name}, {bin.area?.district}</p>
+        </div>
+
+        <div>
+          <p className="text-xs text-gray-500 uppercase tracking-wide flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            User
+          </p>
+          <p className="font-medium text-gray-900">{bin.user?.username}</p>
+        </div>
+
+        {bin.user?.contact && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              Contact
+            </p>
+            <p className="font-medium text-gray-900">{bin.user.contact}</p>
+          </div>
+        )}
+
+        <div>
+          <p className="text-xs text-gray-400">
+            Last Updated: {new Date(bin.sensorData.lastUpdated).toLocaleString()}
+          </p>
+        </div>
+      </div>
+
+      {/* Collect Button */}
+      <button
+        onClick={() => onCollectClick(bin)}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        Collect Bin
+      </button>
+    </div>
+  );
+};
+
+// Main Component
 const FullBinsCollector = () => {
   const [loading, setLoading] = useState(true);
   const [fullBins, setFullBins] = useState([]);
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+  const [viewMode, setViewMode] = useState('list');
   const [selectedBin, setSelectedBin] = useState(null);
-  const [collectDialogOpen, setCollectDialogOpen] = useState(false);
-  const [mapCenter, setMapCenter] = useState([6.9271, 79.8612]); // Default: Colombo
+  const [collectModalOpen, setCollectModalOpen] = useState(false);
+  const [mapCenter, setMapCenter] = useState([6.9271, 79.8612]);
 
   useEffect(() => {
     loadFullBins();
-    // Auto-refresh every 30 seconds
     const interval = setInterval(loadFullBins, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  /**
-   * Load full bins from API
-   */
   const loadFullBins = async () => {
     try {
       setLoading(true);
       const response = await getFullBinsForCollector();
-      console.log('Full bins response:', response); // Debug log
-      
-      // Handle both response formats
       const bins = response.bins || response || [];
-      console.log('Bins to display:', bins); // Debug log
-      
       setFullBins(bins);
       
-      // Set map center to first bin if available
       if (bins.length > 0 && bins[0].latitude && bins[0].longitude) {
         setMapCenter([bins[0].latitude, bins[0].longitude]);
       }
@@ -201,192 +257,116 @@ const FullBinsCollector = () => {
     }
   };
 
-  /**
-   * Handle collect bin click
-   */
   const handleCollectClick = (bin) => {
     setSelectedBin(bin);
-    setCollectDialogOpen(true);
+    setCollectModalOpen(true);
   };
 
-  /**
-   * After bin collected, refresh list
-   */
   const handleBinCollected = () => {
     loadFullBins();
   };
 
-  /**
-   * Get fill level color
-   */
-  const getFillColor = (fillLevel) => {
-    return fillLevel === 'Full' ? '#f44336' : '#ff9800';
-  };
-
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <div className="flex h-screen bg-gray-50">
         <CollectorDrawer />
-        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', ml: { sm: '240px' } }}>
-          <CircularProgress />
-        </Box>
-      </Box>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+    <div className="flex h-screen bg-gray-50">
       <CollectorDrawer />
-      <Box sx={{ flexGrow: 1, ml: { sm: '240px' }, p: 3 }}>
+      <div className="flex-1 p-6 overflow-y-auto">
         {/* Header */}
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
-            <DeleteIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-            Bins Ready for Collection
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {fullBins.length} bin{fullBins.length !== 1 ? 's' : ''} need{fullBins.length === 1 ? 's' : ''} collection
-          </Typography>
-        </Box>
-        <Box display="flex" gap={2}>
-          <Button
-            variant={viewMode === 'list' ? 'contained' : 'outlined'}
-            onClick={() => setViewMode('list')}
-          >
-            List View
-          </Button>
-          <Button
-            variant={viewMode === 'map' ? 'contained' : 'outlined'}
-            startIcon={<MapIcon />}
-            onClick={() => setViewMode('map')}
-          >
-            Map View
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={loadFullBins}
-          >
-            Refresh
-          </Button>
-        </Box>
-      </Box>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <h1 className="text-3xl font-bold text-gray-900">Bins Ready for Collection</h1>
+            </div>
+            <p className="text-gray-600">
+              {fullBins.length} bin{fullBins.length !== 1 ? 's' : ''} need{fullBins.length === 1 ? 's' : ''} collection
+            </p>
+          </div>
 
-      {fullBins.length === 0 ? (
-        <Alert severity="info">
-          <strong>No bins ready for collection.</strong> All bins in your assigned areas are currently below High fill level.
-        </Alert>
-      ) : (
-        <>
-          {/* List View */}
-          {viewMode === 'list' && (
-            <Grid container spacing={3}>
-              {fullBins.map((bin) => (
-                <Grid item xs={12} md={6} lg={4} key={bin._id}>
-                  <Card elevation={3}>
-                    <CardContent>
-                      {/* Bin Header */}
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Chip
-                          label={bin.sensorData.fillLevel}
-                          sx={{
-                            backgroundColor: getFillColor(bin.sensorData.fillLevel),
-                            color: 'white',
-                            fontWeight: 'bold',
-                          }}
-                        />
-                        <Typography variant="h5" fontWeight="bold">
-                          {bin.sensorData.fillPercentage}%
-                        </Typography>
-                      </Box>
+          {/* View Toggle */}
+          <div className="flex items-center gap-2">
+            <div className="bg-white border border-gray-300 rounded-lg p-1 flex">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                List
+              </button>
+              <button
+                onClick={() => setViewMode('map')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  viewMode === 'map'
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Map
+              </button>
+            </div>
+            
+            <button
+              onClick={loadFullBins}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
 
-                      <Divider sx={{ mb: 2 }} />
+        {/* Content */}
+        {fullBins.length === 0 ? (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
+            <svg className="w-16 h-16 text-blue-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-blue-900 mb-2">No bins ready for collection</h3>
+            <p className="text-blue-700">All bins in your assigned areas are currently below High fill level.</p>
+          </div>
+        ) : (
+          <>
+            {/* List View */}
+            {viewMode === 'list' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {fullBins.map((bin) => (
+                  <BinCard
+                    key={bin._id}
+                    bin={bin}
+                    onCollectClick={handleCollectClick}
+                  />
+                ))}
+              </div>
+            )}
 
-                      {/* Bin Info */}
-                      <Box mb={2}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Bin ID
-                        </Typography>
-                        <Typography variant="body2" fontWeight="medium">
-                          {bin.binId}
-                        </Typography>
-                      </Box>
-
-                      <Box mb={2}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          <LocationIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
-                          Address
-                        </Typography>
-                        <Typography variant="body2">{bin.address}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {bin.area?.name}, {bin.area?.district}
-                        </Typography>
-                      </Box>
-
-                      <Box mb={2}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          <PersonIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
-                          User
-                        </Typography>
-                        <Typography variant="body2">{bin.user?.username}</Typography>
-                      </Box>
-
-                      {bin.user?.contact && (
-                        <Box mb={2}>
-                          <Typography variant="subtitle2" color="text.secondary">
-                            <PhoneIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
-                            Contact
-                          </Typography>
-                          <Typography variant="body2">{bin.user.contact}</Typography>
-                        </Box>
-                      )}
-
-                      <Box mb={2}>
-                        <Typography variant="caption" color="text.secondary">
-                          Last Updated: {new Date(bin.sensorData.lastUpdated).toLocaleString()}
-                        </Typography>
-                      </Box>
-
-                      {/* Collect Button */}
-                      <Button
-                        variant="contained"
-                        color="success"
-                        fullWidth
-                        startIcon={<CheckCircleIcon />}
-                        onClick={() => handleCollectClick(bin)}
-                      >
-                        Collect Bin
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-
-          {/* Map View */}
-          {viewMode === 'map' && (
-            <Card className="shadow-2xl rounded-xl overflow-hidden border-t-4 border-purple-500">
-              <CardContent className="p-0">
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4">
-                  <div className="flex items-center gap-3">
-                    <MapIcon sx={{ fontSize: 32 }} />
-                    <div>
-                      <Typography variant="h6" className="font-bold">
-                        Interactive Map View
-                      </Typography>
-                      <Typography variant="body2" className="text-purple-100">
-                        Click on markers to view bin details and collect
-                      </Typography>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ height: '600px', width: '100%', position: 'relative' }}>
+            {/* Map View */}
+            {viewMode === 'map' && (
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="h-[600px] relative">
                   <MapContainer
                     center={mapCenter}
                     zoom={13}
-                    style={{ height: '100%', width: '100%', zIndex: 0 }}
+                    style={{ height: '100%', width: '100%' }}
                     key={`map-${fullBins.length}`}
                   >
                     <TileLayer
@@ -400,80 +380,60 @@ const FullBinsCollector = () => {
                         icon={createCustomIcon(bin.sensorData.fillLevel)}
                       >
                         <Popup>
-                          <div className="min-w-[240px] p-2">
-                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg mb-3 shadow-lg">
-                              <Typography variant="subtitle1" className="font-bold">
-                                {bin.binId}
-                              </Typography>
-                            </div>
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between bg-red-50 rounded p-2">
-                                <Typography variant="body2" className="text-gray-600 font-medium">
-                                  Fill Level:
-                                </Typography>
-                                <span className="font-bold text-red-600">
+                          <div className="p-3 min-w-[200px]">
+                            <div className="font-semibold text-lg mb-3">{bin.binId}</div>
+                            
+                            <div className="space-y-2 mb-4">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Fill Level:</span>
+                                <span className={`font-medium ${
+                                  bin.sensorData.fillLevel === 'Full' ? 'text-red-600' : 'text-orange-600'
+                                }`}>
                                   {bin.sensorData.fillLevel} ({bin.sensorData.fillPercentage}%)
                                 </span>
                               </div>
-                              <div className="bg-blue-50 rounded p-2">
-                                <Typography variant="body2" className="text-gray-600 font-medium mb-1">
-                                  Address:
-                                </Typography>
-                                <Typography variant="body2" className="text-gray-800">
-                                  {bin.address}
-                                </Typography>
+                              <div>
+                                <span className="text-gray-600">Address:</span>
+                                <div className="font-medium">{bin.address}</div>
                               </div>
-                              <div className="bg-purple-50 rounded p-2">
-                                <Typography variant="body2" className="text-gray-600 font-medium mb-1">
-                                  User:
-                                </Typography>
-                                <Typography variant="body2" className="text-gray-800">
-                                  {bin.user?.username}
-                                </Typography>
+                              <div>
+                                <span className="text-gray-600">User:</span>
+                                <div className="font-medium">{bin.user?.username}</div>
                               </div>
                               {bin.user?.contact && (
-                                <div className="bg-orange-50 rounded p-2">
-                                  <Typography variant="body2" className="text-gray-600 font-medium mb-1">
-                                    Contact:
-                                  </Typography>
-                                  <Typography variant="body2" className="text-gray-800">
-                                    {bin.user.contact}
-                                  </Typography>
+                                <div>
+                                  <span className="text-gray-600">Contact:</span>
+                                  <div className="font-medium">{bin.user.contact}</div>
                                 </div>
                               )}
                             </div>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              fullWidth
+                            
+                            <button
                               onClick={() => handleCollectClick(bin)}
-                              className="mt-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg text-white font-bold py-2"
+                              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-lg font-medium transition-colors"
                             >
                               Collect Bin
-                            </Button>
+                            </button>
                           </div>
                         </Popup>
                       </Marker>
                     ))}
                   </MapContainer>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
+              </div>
+            )}
+          </>
+        )}
 
-      {/* Collect Dialog */}
-      {selectedBin && (
-        <CollectBinDialog
-          open={collectDialogOpen}
-          onClose={() => setCollectDialogOpen(false)}
+        {/* Collect Modal */}
+        <CollectBinModal
+          isOpen={collectModalOpen}
+          onClose={() => setCollectModalOpen(false)}
           bin={selectedBin}
           onCollected={handleBinCollected}
         />
-      )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 

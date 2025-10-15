@@ -2,35 +2,22 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminDrawer from "../components/AdminDrawer";
 import { deleteGarbage, getAllGarbages } from "../../../api/garbageApi";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import SummarizeIcon from "@mui/icons-material/Summarize";
 import { ToastContainer, toast } from "react-toastify";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-// MUI
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import { getAllAreas } from "../../../api/areaApi";
 
 const AdminGarbage = () => {
   const [garbages, setGarbages] = useState([]);
   const [filteredGarbages, setFilteredGarbages] = useState([]);
-  const [open, setOpen] = React.useState(false);
+  const [areas, setAreas] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedGarbageId, setSelectedGarbageId] = useState(null);
-  const [loader, setLoader] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [areaFilter, setAreaFilter] = useState("");
-  const [areas, setAreas] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   const fetchAllAreas = async () => {
@@ -38,19 +25,26 @@ const AdminGarbage = () => {
       const res = await getAllAreas();
       setAreas(res);
     } catch (error) {
-      alert(error.message);
-      console.error("Error fetching areas: ", error.message);
+      toast.error("Failed to fetch areas: " + error.message, {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
     }
   };
 
   const fetchAllGarbages = async () => {
     try {
+      setLoading(true);
       const res = await getAllGarbages();
       setGarbages(res);
       setFilteredGarbages(res);
     } catch (error) {
-      alert(error.message);
-      console.error("Error fetching garbages: ", error.message);
+      toast.error("Failed to fetch garbage requests: " + error.message, {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,401 +55,462 @@ const AdminGarbage = () => {
 
   const filterGarbages = () => {
     let filtered = garbages;
+    
     if (statusFilter) {
       filtered = filtered.filter((garbage) => garbage.status === statusFilter);
     }
     if (typeFilter) {
       filtered = filtered.filter((garbage) => garbage.type === typeFilter);
     }
-
     if (areaFilter !== "") {
-      filtered = filtered.filter(
-        (garbage) => garbage.area?.name === areaFilter
+      filtered = filtered.filter((garbage) => garbage.area?.name === areaFilter);
+    }
+    if (searchTerm !== "") {
+      filtered = filtered.filter((garbage) =>
+        garbage.user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        garbage.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // console.log(`areaFilter => `, areaFilter);
     setFilteredGarbages(filtered);
   };
 
   useEffect(() => {
     filterGarbages();
-  }, [statusFilter, typeFilter, areaFilter, garbages]);
+  }, [statusFilter, typeFilter, areaFilter, searchTerm, garbages]);
 
-  const handleClickOpen = (id) => {
+  const handleDeleteClick = (id) => {
     setSelectedGarbageId(id);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
+    setDeleteModalOpen(true);
   };
 
   const handleDeleteGarbage = async () => {
     if (selectedGarbageId) {
       try {
+        setLoading(true);
         await deleteGarbage(selectedGarbageId);
         setGarbages((currentGarbage) =>
           currentGarbage.filter((garbage) => garbage._id !== selectedGarbageId)
         );
-        handleClose();
-        toast.success("Garbage Request Deleted Successfully!", {
+        setDeleteModalOpen(false);
+        toast.success("Garbage request deleted successfully!", {
           position: "bottom-right",
           autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "colored",
         });
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
       } catch (error) {
-        alert(error.message);
-        // console.log("Error deleting garbage: ", error);
+        toast.error("Failed to delete garbage request: " + error.message, {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      } finally {
+        setLoading(false);
       }
     }
   };
-
-  function getStatusClassName(status) {
-    switch (status) {
-      case "Pending":
-        return "bg-yellow-300 text-yellow-900";
-      case "Collected":
-        return "bg-green-300 text-green-900";
-      case "In Progress":
-        return "bg-red-300 text-red-900";
-      default:
-        return "";
-    }
-  }
-
-  function getTypeClassName(type) {
-    switch (type) {
-      case "Recyclable":
-        return "bg-blue-100 text-blue-800";
-      case "Non-Recyclable":
-        return "bg-orange-100 text-orange-800";
-
-      default:
-        return "";
-    }
-  }
 
   const handleEditClick = (garbage) => {
     navigate("/admin/garbage/update", { state: { garbage } });
   };
 
-  const downloadPDF = (garbageData) => {
+  const downloadPDF = () => {
     const doc = new jsPDF();
-    const imgLogo = new Image();
-    imgLogo.src = "../src/assets/logo.png"; // Add your logo path
+    
+    // Header
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor("59", "130", "246");
+    doc.setFontSize(20);
+    doc.text("ZeroBin Admin Portal", 14, 20);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor("0", "0", "0");
+    doc.setFontSize(16);
+    doc.text("Garbage Collection Report", 14, 35);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 45);
 
-    // console.log("Image path: ", imgLogo.src);
-    imgLogo.onload = () => {
-      // Header
-      doc.addImage(imgLogo, "PNG", 14, 10, 55, 15); // Add logo
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor("48752c"); // Change color if needed
-      doc.setFontSize(16);
-      doc.text("ZeroBin Waste Management System", 95, 18); // Title in the header
+    // Summary data
+    const summaryData = [
+      ["Total Requests", filteredGarbages.length],
+      ["Collected", filteredGarbages.filter(g => g.status === "Collected").length],
+      ["In Progress", filteredGarbages.filter(g => g.status === "In Progress").length],
+      ["Pending", filteredGarbages.filter(g => g.status === "Pending").length],
+      ["Recyclable", filteredGarbages.filter(g => g.type === "Recyclable").length],
+      ["Non-Recyclable", filteredGarbages.filter(g => g.type === "Non-Recyclable").length],
+    ];
 
-      // Title and Date
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor("000000");
-      doc.setFontSize(20);
-      doc.text("Garbage Collection Report", 14, 40);
+    autoTable(doc, {
+      startY: 55,
+      head: [["Summary", "Count"]],
+      body: summaryData,
+      theme: "grid",
+      headStyles: { fillColor: [59, 130, 246] },
+    });
 
-      doc.setFontSize(11);
-      doc.setTextColor(100);
-      doc.text(`Generated Date: ${new Date().toLocaleString()}`, 14, 48);
-
-      // Garbage Collection Summary Table
-      autoTable(doc, {
-        startY: 58,
-        head: [["Summary", "Total Count"]],
-        body: [
-          ["Total Garbage Requests", garbageData.totalRequests],
-          ["Collected Garbages", garbageData.collectedCount],
-          ["InProgress Garbages", garbageData.inProgressCount],
-          ["Pending Garbages", garbageData.pendingCount],
-        ],
-        theme: "grid",
-      });
-
-      // Garbage Type Counts Table
-      autoTable(doc, {
-        startY: doc.autoTable.previous.finalY + 10,
-        head: [["Garbage Type", "Toatal Count"]],
-        body: [
-          ["Recyclable", garbageData.recyclableCount],
-          ["Non-Recyclable", garbageData.nonRecyclableCount],
-        ],
-        theme: "grid",
-      });
-
-      // Footer
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.setTextColor(150);
-        doc.text(
-          `Page ${i} of ${pageCount}`,
-          doc.internal.pageSize.width - 30,
-          doc.internal.pageSize.height - 10
-        ); // Page number
-      }
-
-      setLoader(false);
-
-      // Save the PDF
-      const generatedDate = new Date().toLocaleDateString().replace(/\//g, "-");
-      doc.save(`Garbage_Collection_Report_${generatedDate}.pdf`);
-
-      toast.success("Report Generated Successfully!", {
-        position: "bottom-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-      });
-    };
+    const generatedDate = new Date().toLocaleDateString().replace(/\//g, "-");
+    doc.save(`Garbage_Report_${generatedDate}.pdf`);
+    toast.success("Report generated successfully!", {
+      position: "bottom-right",
+      autoClose: 3000,
+    });
   };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "Collected":
+        return "bg-green-100 text-green-800";
+      case "In Progress":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getTypeColor = (type) => {
+    switch (type) {
+      case "Recyclable":
+        return "bg-emerald-100 text-emerald-800";
+      case "Non-Recyclable":
+        return "bg-orange-100 text-orange-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const metrics = [
+    {
+      title: "Total Requests",
+      value: garbages.length,
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      ),
+      gradient: "from-blue-900 to-blue-800",
+      bgGradient: "from-blue-50 to-indigo-50",
+    },
+    {
+      title: "Collected",
+      value: garbages.filter(g => g.status === "Collected").length,
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      gradient: "from-emerald-600 to-teal-600",
+      bgGradient: "from-emerald-50 to-teal-50",
+    },
+    {
+      title: "Pending",
+      value: garbages.filter(g => g.status === "Pending").length,
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      gradient: "from-yellow-500 to-orange-500",
+      bgGradient: "from-yellow-50 to-orange-50",
+    },
+  ];
 
   return (
     <AdminDrawer>
-      <h1 className="m-5 text-2xl font-semibold text-green-900">
+      <div className="p-6 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 min-h-screen">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-900 to-indigo-800 bg-clip-text text-transparent mb-2">
         Garbage Management
       </h1>
-      <div className="m-5 shadow-md rounded-lg">
-        <div className="flex justify-between p-4">
-          <div className="flex items-center space-x-4">
-            {/* <span className="font-semibold">Filter By</span> */}
-            <FormControl className="w-44">
-              <InputLabel id="status-filter-label">Filter By Status</InputLabel>
-              <Select
-                labelId="status-filter-label"
-                value={statusFilter}
-                label="Status"
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="Collected">Collected</MenuItem>
-                <MenuItem value="In Progress">In Progress</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl className="w-44">
-              <InputLabel id="type-filter-label">Filter By Type</InputLabel>
-              <Select
-                labelId="type-filter-label"
-                value={typeFilter}
-                label="Type"
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="Recyclable">Recyclable</MenuItem>
-                <MenuItem value="Non-Recyclable">Non-Recyclable</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl className="w-44">
-              <InputLabel id="area-filter-label">Filter By Area</InputLabel>
-              <Select
-                labelId="area-filter-label"
-                value={areaFilter}
-                label="Area"
-                onChange={(e) => setAreaFilter(e.target.value)}
-              >
-                <MenuItem value={""}>All Areas</MenuItem>
-                {areas.map((area) => (
-                  <MenuItem key={area._id} value={area.name}>
-                    {area.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </div>
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<SummarizeIcon />}
-            onClick={() =>
-              downloadPDF({
-                totalRequests: filteredGarbages.length,
-                collectedCount: filteredGarbages.filter(
-                  (g) => g.status === "Collected"
-                ).length,
-                inProgressCount: filteredGarbages.filter(
-                  (g) => g.status === "In Progress"
-                ).length,
-                pendingCount: filteredGarbages.filter(
-                  (g) => g.status === "Pending"
-                ).length,
-                recyclableCount: filteredGarbages.filter(
-                  (g) => g.type === "Recyclable"
-                ).length,
-                nonRecyclableCount: filteredGarbages.filter(
-                  (g) => g.type === "Non-Recyclable"
-                ).length,
-              })
-            }
-          >
-            Generate Report
-          </Button>
+          <p className="text-gray-600">Monitor and manage waste collection requests</p>
         </div>
-        <table className="w-full text-sm text-left rtl:text-right text-gray-500 :text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 :bg-gray-700 :text-gray-400">
-            <tr>
-              <th scope="col" className="px-5 py-3">
-                Name
-              </th>
-              {/* <th scope="col" className="px-5 py-3">
-                Email
-              </th> */}
-              <th scope="col" className="px-5 py-3">
-                Phone Number
-              </th>
-              <th scope="col" className="px-3 py-3">
-                Type
-              </th>
-              <th scope="col" className="px-5 py-3">
-                Area
-              </th>
-              {/* <th scope="col" className="px-5 py-3">
-                Address
-              </th> */}
-              <th scope="col" className="px-5 py-3">
-                Date Requested
-              </th>
-              <th scope="col" className="px-5 py-3">
-                Status
-              </th>
-              <th scope="col" className="px-4 py-3">
-                <span className="sr-only"></span>
-              </th>
-              <th scope="col" className="px-5 py-3">
-                <span className="sr-only"></span>
-              </th>
+
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {metrics.map((metric, index) => (
+            <MetricCard key={index} {...metric} />
+          ))}
+        </div>
+
+        {/* Filters and Actions */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Search by user..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </div>
+            
+            <div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              >
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Collected">Collected</option>
+                <option value="In Progress">In Progress</option>
+              </select>
+            </div>
+
+            <div>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              >
+                <option value="">All Types</option>
+                <option value="Recyclable">Recyclable</option>
+                <option value="Non-Recyclable">Non-Recyclable</option>
+              </select>
+            </div>
+
+            <div>
+              <select
+                value={areaFilter}
+                onChange={(e) => setAreaFilter(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+              >
+                <option value="">All Areas</option>
+                {areas.map((area) => (
+                  <option key={area._id} value={area.name}>
+                    {area.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <button
+                onClick={downloadPDF}
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-900 to-indigo-800 text-white rounded-xl font-semibold hover:from-blue-800 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Report
+              </button>
+            </div>
+          </div>
+
+          {/* Active Filters */}
+          {(searchTerm || statusFilter || typeFilter || areaFilter) && (
+            <div className="flex flex-wrap gap-2">
+              {searchTerm && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                  Search: "{searchTerm}"
+                  <button onClick={() => setSearchTerm("")} className="ml-2 hover:text-blue-600">×</button>
+                </span>
+              )}
+              {statusFilter && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-emerald-100 text-emerald-800">
+                  Status: {statusFilter}
+                  <button onClick={() => setStatusFilter("")} className="ml-2 hover:text-emerald-600">×</button>
+                </span>
+              )}
+              {typeFilter && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                  Type: {typeFilter}
+                  <button onClick={() => setTypeFilter("")} className="ml-2 hover:text-purple-600">×</button>
+                </span>
+              )}
+              {areaFilter && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800">
+                  Area: {areaFilter}
+                  <button onClick={() => setAreaFilter("")} className="ml-2 hover:text-orange-600">×</button>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Garbage Requests Table */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Garbage Requests ({filteredGarbages.length})
+            </h3>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">User</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Contact</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Area</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date Requested</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {filteredGarbages.length > 0 ? (
+              <tbody className="divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-12 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="ml-2 text-gray-500">Loading requests...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredGarbages.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                      No garbage requests found matching your criteria
+                    </td>
+                  </tr>
+                ) : (
               filteredGarbages
-                .slice()
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .map((garbage) => (
-                  <tr
-                    className="bg-white border-b :bg-gray-800 :border-gray-700"
-                    key={garbage._id}
-                  >
-                    <th
-                      scope="row"
-                      className="px-5 py-4 font-medium text-gray-900 whitespace-nowrap :text-white"
-                    >
-                      {garbage.user
-                        ? garbage.user.username
-                        : "No user assigned"}
-                    </th>
-                    <td className="px-5 py-4">
-                      {garbage.user ? garbage.user.contact : ""}
+                      <tr key={garbage._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                              <span className="text-white font-semibold">
+                                {garbage.user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {garbage.user?.username || "Unknown User"}
+                              </p>
+                              <p className="text-sm text-gray-500">ID: {garbage._id.slice(-6)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-600">
+                          {garbage.user?.contact || "Not provided"}
                     </td>
-                    <td className="px-3 py-4 capitalize">
-                      <span
-                        className={`uppercase font-semibold text-[12px] px-2.5 py-0.5 rounded ${getTypeClassName(
-                          garbage.type
-                        )}`}
-                      >
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(garbage.type)}`}>
                         {garbage.type}
                       </span>
                     </td>
-                    <td className="px-5 py-4">
-                      {garbage.area ? garbage.area.name : ""}
-                      &nbsp;
-                      <span
-                        className={`uppercase font-semibold text-[12px] p-1.5 rounded-full ${
-                          garbage.area.type === "weightBased"
-                            ? `bg-blue-200 text-blue-600`
-                            : "bg-green-200 text-green-600"
-                        }`}
-                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900">{garbage.area?.name || "N/A"}</span>
+                            {garbage.area?.type && (
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                                garbage.area.type === "weightBased" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
+                              }`}>
                         {garbage.area.type === "weightBased" ? "W" : "F"}
                       </span>
+                            )}
+                          </div>
                     </td>
-                    {/* <td className="px-5 py-4">
-                      {garbage.user ? garbage.user.address : ""}
-                    </td> */}
-                    <td className="px-5 py-4">
-                      {" "}
-                      {new Date(garbage.createdAt).toLocaleString()}
+                        <td className="px-6 py-4 text-gray-600">
+                          {new Date(garbage.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-5 py-4 capitalize">
-                      <span
-                        className={`uppercase font-semibold text-[10px] px-2.5 py-1 rounded-full ${getStatusClassName(
-                          garbage.status
-                        )}`}
-                      >
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(garbage.status)}`}>
                         {garbage.status}
                       </span>
                     </td>
-                    <td className="px- py-4 text-right">
+                        <td className="px-6 py-4">
+                          <div className="flex justify-center gap-2">
                       {garbage.status !== "Collected" && (
-                        <a
+                              <button
                           onClick={() => handleEditClick(garbage)}
-                          className="font-medium text-gray-400 :text-blue-500 cursor-pointer"
-                        >
-                          <EditIcon />
-                        </a>
-                      )}
-                    </td>
-                    <td className="px-3 py-4 text-right">
-                      <a
-                        onClick={() => handleClickOpen(garbage._id)}
-                        className="font-medium text-red-600 :text-blue-500 cursor-pointer"
-                      >
-                        <DeleteIcon />
-                      </a>
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Edit Request"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteClick(garbage._id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete Request"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                     </td>
                   </tr>
                 ))
-            ) : (
-              <tr className="">
-                <td className="w-full text-lg text-red-600 py-7 font-semibold text-center col-span-5">
-                  No garbage requests found!
-                </td>
-              </tr>
             )}
           </tbody>
         </table>
       </div>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">{"Are you sure?"}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            The selected garbage disposal request will be deleted and cannot be
-            retrieved.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleDeleteGarbage} color="error" autoFocus>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <ToastContainer />
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this garbage request? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteGarbage}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete Request"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ToastContainer
+          position="bottom-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+      </div>
     </AdminDrawer>
   );
 };
+
+const MetricCard = ({ title, value, icon, gradient, bgGradient }) => (
+  <div className={`bg-gradient-to-br ${bgGradient} p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50`}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">{title}</p>
+        <p className={`text-4xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
+      </div>
+      <div className={`p-4 rounded-xl bg-gradient-to-r ${gradient} shadow-lg`}>
+        {icon}
+      </div>
+    </div>
+  </div>
+);
 
 export default AdminGarbage;
