@@ -382,11 +382,12 @@ const FullBinsCollector = () => {
                     </div>
                   </div>
                 </div>
-                <Box className="h-[600px] relative">
+                <div style={{ height: '600px', width: '100%', position: 'relative' }}>
                   <MapContainer
                     center={mapCenter}
                     zoom={13}
-                    style={{ height: '100%', width: '100%' }}
+                    style={{ height: '100%', width: '100%', zIndex: 0 }}
+                    key={`map-${fullBins.length}`}
                   >
                     <TileLayer
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -455,7 +456,7 @@ const FullBinsCollector = () => {
                       </Marker>
                     ))}
                   </MapContainer>
-                </Box>
+                </div>
               </CardContent>
             </Card>
           )}
