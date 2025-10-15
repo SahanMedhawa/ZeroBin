@@ -18,6 +18,7 @@ import garbageRoutes from "./routes/garbageRoutes.js"; // fixed typo in garbageR
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import areaRoutes from "./routes/areaRoutes.js"; // Import areaRoutes
+import grievanceRoutes from "./routes/grievanceRoutes.js"; // Import grievanceRoutes
 // Removed: Smart Device routes - replaced by Smart Bin system (one bin per user)
 // import smartDeviceRoutes from "./routes/smartDeviceRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js"; // Import contactRoutes
@@ -82,6 +83,9 @@ app.use("/api/transactions", transactionRoutes);
 
 // Area Route
 app.use("/api/areas", areaRoutes);
+
+// Grievance Route
+app.use("/api/grievances", grievanceRoutes);
 
 // Removed: Smart Device routes - replaced by Smart Bin system (one bin per user)
 // app.use("/api/smartDevices", smartDeviceRoutes);

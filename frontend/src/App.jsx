@@ -20,6 +20,7 @@ import AdminTransactions from "./pages/admin/transactions/AdminTransactions";
 import AdminGarbageUpdate from "./pages/admin/garbage/AdminGarbageUpdate";
 import AdminUsers from "./pages/admin/users/AdminUsers";
 import AdminWMAs from "./pages/admin/wmas/AdminWMAs";
+import AdminGrievances from "./pages/admin/grievances/AdminGrievances";
 
 import WMADashboard from "./pages/wma/dashboard/WMADashboard";
 import WMACollectors from "./pages/wma/collectors/ViewCollectors";
@@ -51,6 +52,11 @@ import WMAServiceAreas from "./pages/wma/areas/WMAServiceAreas";
 import BinManagement from "./pages/client/bin/BinManagement";
 import FullBinsCollector from "./pages/collector/bins/FullBinsCollector";
 
+// Grievance Management
+import CreateGrievance from "./pages/client/grievances/CreateGrievance";
+import UserGrievances from "./pages/client/grievances/UserGrievances";
+import CollectorGrievances from "./pages/collector/grievances/CollectorGrievances";
+
 function App() {
   return (
     <>
@@ -69,6 +75,8 @@ function App() {
           {/* Removed: Garbage Request page - replaced by Smart Bin system */}
           {/* <Route path="/user/my-garbage" element={<ProtectedRoute><UserGarbageRequest /></ProtectedRoute>} /> */}
           <Route path="/user/my-bin" element={<ProtectedRoute><BinManagement /></ProtectedRoute>} />
+          <Route path="/user/grievances" element={<ProtectedRoute><UserGrievances /></ProtectedRoute>} />
+          <Route path="/user/grievances/create" element={<ProtectedRoute><CreateGrievance /></ProtectedRoute>} />
           <Route path="/user/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route
             path="/user/my-transaction"
@@ -113,6 +121,7 @@ function App() {
           <Route path="/collector/map" element={<CollectorProtectedRoute><CollectorMap /></CollectorProtectedRoute>} />
           <Route path="/collector/scanner" element={<CollectorProtectedRoute><CollectorScanner /></CollectorProtectedRoute>} />
           <Route path="/collector/earnings" element={<CollectorProtectedRoute><CollectorEarnings /></CollectorProtectedRoute>} />
+          <Route path="/collector/grievances" element={<CollectorProtectedRoute><CollectorGrievances /></CollectorProtectedRoute>} />
           {/* Removed: Old updateGarbage - replaced by FullBinsCollector collection */}
           {/* <Route path="/collector/updateGarbage" element={<CollectorProtectedRoute><UpdateGarbage /></CollectorProtectedRoute>} /> */}
 
@@ -135,6 +144,7 @@ function App() {
           />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/wmas" element={<ProtectedRoute><AdminWMAs /></ProtectedRoute>} />
+          <Route path="/admin/grievances" element={<ProtectedRoute><AdminGrievances /></ProtectedRoute>} />
           {/* Removed: Admin smart device routes - Dead code (replaced by Smart Bin system) */}
           {/* <Route path="/admin/devices" element={<ProtectedRoute><AdminDevice /></ProtectedRoute>} /> */}
           {/* <Route path="/admin/devices/update" element={<ProtectedRoute><AdminDeviceUpdate /></ProtectedRoute>} /> */}

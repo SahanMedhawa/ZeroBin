@@ -191,6 +191,26 @@ const deleteSchedule = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/schedule/active
+ * @desc    Get all active schedules (In Progress status)
+ * @access  Private
+ * @returns {Object} - Active schedules with populated collector and area data
+ */
+const getActiveSchedules = asyncHandler(async (req, res) => {
+  const activeSchedules = await Schedule.find({ status: "In Progress" })
+    .populate("collectorId", "collectorName truckNumber contactNo statusOfCollector")
+    .populate("area", "name district postalCode")
+    .populate("wmaId", "wmaName contactNo")
+    .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    schedules: activeSchedules,
+    count: activeSchedules.length
+  });
+});
+
 export {
   createSchedule,
   getAllSchedules,
@@ -200,4 +220,5 @@ export {
   updateScheduleStatus,
   deleteSchedule,
   getSchedulesByWma,
+  getActiveSchedules,
 };
