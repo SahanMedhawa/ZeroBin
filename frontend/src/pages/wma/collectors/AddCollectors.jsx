@@ -35,20 +35,30 @@ const WmaCollectorCreate = () => {
   useEffect(() => {
     let isValid = true;
 
-    if (contactNo.length !== 10) {
-      setFormError('Invalid Contact Number');
+    // Check if all required fields are filled
+    if (!collectorName || collectorName.trim().length === 0) {
+      setFormError('Collector Name is required');
       isValid = false;
-    } else if (collectorNIC.length >= 0 && !/^\d{12}$|^\d{10}V$/.test(collectorNIC)) {
-      setFormError('Invalid Collector NIC');
+    } else if (!/^[a-zA-Z\s]+$/.test(collectorName)) {
+      setFormError('Invalid Collector Name (only letters and spaces allowed)');
       isValid = false;
-    } else if (collectorName.length >= 0 && !/^[a-zA-Z\s]+$/.test(collectorName)) {
-      setFormError('Invalid Collector Name');
+    } else if (!collectorNIC || collectorNIC.trim().length === 0) {
+      setFormError('Collector NIC is required');
       isValid = false;
-    } else if (truckNumber.length >= 0 && !/^[a-zA-Z0-9]*$/.test(truckNumber)) {
-      setFormError('Invalid Truck Number');
+    } else if (!/^\d{12}$|^\d{9}V$/.test(collectorNIC)) {
+      setFormError('Invalid Collector NIC (12 digits or 9 digits with V)');
       isValid = false;
-    } else if (truckNumber.length == null ) {
-      setFormError('Invalid Truck Number');
+    } else if (!contactNo || contactNo.length === 0) {
+      setFormError('Contact Number is required');
+      isValid = false;
+    } else if (contactNo.length !== 10) {
+      setFormError('Contact Number must be 10 digits');
+      isValid = false;
+    } else if (!truckNumber || truckNumber.trim().length === 0) {
+      setFormError('Truck Number is required');
+      isValid = false;
+    } else if (!/^[a-zA-Z0-9]+$/.test(truckNumber)) {
+      setFormError('Invalid Truck Number (alphanumeric only)');
       isValid = false;
     } else {
       setFormError('');
@@ -63,10 +73,11 @@ const WmaCollectorCreate = () => {
       const body = {
         wmaId: currentWma._id , truckNumber, collectorName, collectorNIC, contactNo
       }
+      console.log("Creating collector with data:", body);
       await createCollector(body);
-      toast.success("collector status added successfully!", {
+      toast.success("✓ Collector added successfully!", {
         position: "bottom-right",
-        autoClose: 5000,
+        autoClose: 4000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -78,36 +89,53 @@ const WmaCollectorCreate = () => {
         navigate("/wma/collectors");
       }, 2000);
     } catch (error) {
-      console.error("Error adding collector status:", error.message);
-      toast.error("Failed to add collector status.");
+      console.error("Error adding collector:", error.message);
+      console.error("Full error:", error);
+      toast.error(`✕ Failed to add collector: ${error.message}`, {
+        position: "bottom-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "light",
+      });
     }
   };
 
   return (
     <WMADrawer>
-      <div className="grid grid-cols-1 lg:grid-cols- gap-8 p-6">
+      <ToastContainer />
+      <div className="p-6 bg-gradient-to-br from-gray-50 via-purple-50 to-indigo-50 min-h-screen">
+        
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-700 to-indigo-800 bg-clip-text text-transparent mb-2">
+            Add New Collector
+          </h1>
+          <p className="text-gray-600">Register a new collector for your authority</p>
+        </div>
 
         {/* Form Section */}
-        <div className="bg-white shadow-lg rounded-lg p-8">
-        <div className=" float-right cursor-pointer" onClick={() => navigate("/wma/collectors")}>
+        <div className="bg-white shadow-xl rounded-2xl p-8">
+        <div className="float-right cursor-pointer text-gray-400 hover:text-gray-600 transition-colors" onClick={() => navigate("/wma/collectors")}>
             <CloseIcon />
         </div>
-          <h2 className="text-2xl font-bold text-gray-700 mb-6">
-            Update Collector Details
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">
+            Collector Details
           </h2>
           <form className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-600 font-medium">Wast Management Authority</label>
+                <label className="block text-gray-700 font-semibold mb-2">Waste Management Authority</label>
                 <input
                 type="text"
                 value={currentWma.wmaname} 
                 readOnly
-                className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-gray-50"/>
+                className="block w-full p-3 border-2 border-gray-300 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"/>
               </div>
               <div>
-                <label className="block text-gray-600 font-medium">
-                  Collector Name
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Collector Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={collectorName} 
@@ -117,25 +145,28 @@ const WmaCollectorCreate = () => {
                       setCollectorName(input);
                     }
                   }}
-                  className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-white"/>
+                  placeholder="Enter collector name"
+                  className="block w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"/>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-600 font-medium">Collector NIC</label>
+                <label className="block text-gray-700 font-semibold mb-2">Collector NIC <span className="text-red-500">*</span></label>
                 <input
                 value={collectorNIC} 
                 onChange={(e) => {
-                  const input = e.target.value;
-                  if (/^\d{0,12}$/.test(input) || /^\d{10}V$/.test(input)) {
+                  const input = e.target.value.toUpperCase();
+                  // Allow: up to 12 digits, or up to 9 digits followed by V
+                  if (/^\d{0,12}$/.test(input) || /^\d{0,9}V?$/.test(input)) {
                     setCollectorNIC(input);
                   }
                 }}
-                className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-white"/>
+                placeholder="Enter NIC (12 digits or 9 digits with V)"
+                className="block w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"/>
               </div>
               <div>
-              <label className="block text-gray-600 font-medium">
-                Contact Number
+              <label className="block text-gray-700 font-semibold mb-2">
+                Contact Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -146,14 +177,15 @@ const WmaCollectorCreate = () => {
                     setContactNo(input);
                   }
                 }}
-                className="mt-2 block w-full p-[10px] border border-gray-300 rounded-lg bg-white"
+                placeholder="Enter 10-digit contact number"
+                className="block w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
               />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-gray-600 font-medium">
-                Truck Number
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Truck Number <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -164,32 +196,33 @@ const WmaCollectorCreate = () => {
                       setTruckNumber(input);
                     }
                   }}
-                  className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-white text-gray-700"
+                  placeholder="Enter truck registration number"
+                  className="block w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-gray-700"
                 />
               </div>
-              {/* <div>
-                <label className="block text-gray-600 font-medium">
-                Status
-                </label>
-                <select
-                  value={statusOfCollector}
-                  onChange={(e) => setStatusOfCollector(e.target.value)}
-                  className="mt-2 block w-full p-3 border border-gray-300 rounded-lg bg-white"
-                >
-                  <option value="Available">Available</option>
-                  <option value="Not-Available">Not-Available</option>
-                  </select>
-              </div> */}
             </div>
-            <div className=" mt-5">
-              <span className=" text-red-500">{formError}</span>
-            </div>
-            <div className="flex justify-end">
+            {formError && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <span className="text-red-700 font-medium">{formError}</span>
+              </div>
+            )}
+            <div className="flex justify-end gap-4 pt-4">
+              <button
+                type="button"
+                onClick={() => navigate("/wma/collectors")}
+                className="px-6 py-3 border-2 border-purple-500 text-purple-600 rounded-xl font-semibold hover:bg-purple-50 transition-all"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                onClick={valideForm ? handleSubmit : ''}
+                onClick={valideForm ? handleSubmit : null}
                 disabled={!valideForm}
-                className={`py-3 px-8 text-white rounded-lg transition duration-200 focus:ring-4 focus:ring-green-400 ${valideForm ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500'}`}
+                className={`px-8 py-3 rounded-xl font-semibold transition-all shadow-lg ${
+                  valideForm 
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white hover:shadow-xl hover:scale-105' 
+                    : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                }`}
               >
                 Add Collector
               </button>
@@ -197,7 +230,26 @@ const WmaCollectorCreate = () => {
           </form>
         </div>
       </div>
-      <ToastContainer />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastClassName="!bg-white !shadow-2xl !rounded-2xl !border-l-4 !border-purple-500"
+        bodyClassName="text-gray-800 font-medium"
+        progressClassName="!bg-gradient-to-r !from-purple-600 !to-indigo-700"
+        closeButton={
+          <button className="text-gray-400 hover:text-gray-600 transition-colors">
+            ✕
+          </button>
+        }
+      />
     </WMADrawer>
   );
 };

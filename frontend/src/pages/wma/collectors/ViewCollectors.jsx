@@ -125,77 +125,92 @@ function ViewCollectors() {
 
   return (
     <WMADrawer>
-      <h1 className="m-5 text-2xl font-semibold text-green-900">
+      <ToastContainer
+        position="bottom-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastClassName="!bg-white !shadow-2xl !rounded-2xl !border-l-4 !border-purple-500"
+        bodyClassName="text-gray-800 font-medium"
+        progressClassName="!bg-gradient-to-r !from-purple-600 !to-indigo-700"
+        closeButton={
+          <button className="text-gray-400 hover:text-gray-600 transition-colors">
+            ✕
+          </button>
+        }
+      />
+      <div className="p-6 bg-gradient-to-br from-gray-50 via-purple-50 to-indigo-50 min-h-screen">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-700 to-indigo-800 bg-clip-text text-transparent mb-2">
             Collector Management
-        </h1>
-        <div className="m-5 shadow-md rounded-lg">
-        <div className="flex justify-between p-4">
-          <div className="flex items-center space-x-4">
-            <div className=' border-2 border-gray-400 rounded-2xl px-7 py-3'>
-              <h1 className=' text-gray-500'>Total Collectors</h1>
-              <div className=' flex justify-start items-center'>
-                <div className=' flex justify-center items-center bg-[#BA9114]/50 rounded-full aspect-square h-[60px]'>
-                  <div className=' flex justify-center items-center bg-[#BA9114] rounded-full aspect-square h-[45px] text-white'>
-                    <GroupIcon sx={{ fontSize: 30 }}/>
-                  </div>  
-                </div>
-                <span className=' text-3xl font-bold p-5'>{collectors.length} Collectors</span>
-              </div>
-            </div>
-            <div className=' border-2 border-gray-400 rounded-2xl px-7 py-3'>
-              <h1 className=' text-gray-500'>Available Collectors</h1>
-              <div className=' flex justify-start items-center'>
-                <div className=' flex justify-center items-center bg-[#52C93F]/50 rounded-full aspect-square h-[60px]'>
-                  <div className=' flex justify-center items-center bg-[#52C93F] rounded-full aspect-square h-[45px] text-white'>
-                    <GroupAddIcon sx={{ fontSize: 30 }}/>
-                  </div>  
-                </div>
-                <span className=' text-3xl font-bold p-5'>{collectors.filter((collector) => collector.statusOfCollector === 'Available').length} Collectors</span>
-              </div>
-            </div>
-            <div className=' border-2 border-gray-400 rounded-2xl px-7 py-3'>
-              <h1 className=' text-gray-500'>Unavailable Collectors</h1>
-              <div className=' flex justify-start items-center'>
-                <div className=' flex justify-center items-center bg-[#FF6262]/50 rounded-full aspect-square h-[60px]'>
-                  <div className=' flex justify-center items-center bg-[#FF6262] rounded-full aspect-square h-[45px] text-white'>
-                    <GroupRemoveIcon sx={{ fontSize: 30 }}/>
-                  </div>  
-                </div>
-                <span className=' text-3xl font-bold p-5'>{collectors.filter((collector) => collector.statusOfCollector === 'Not-Available').length} Collectors</span>
-              </div>
-            </div>
-          </div>
+          </h1>
+          <p className="text-gray-600">Manage your authorized collectors</p>
         </div>
-        <h1 className=' pl-4 font-semibold'>Authorized Collectors Under {currentWma.wmaname}</h1>
-        <div className=' px-4 my-4 flex justify-between items-center'>
-          <input onChange={(e) => setSearchFilter(e.target.value)} type='text' placeholder='Search Collector' className=' py-2 px-2  border-2 rounded-lg border-gray-400 w-[40%]'/>
-          <div className=' flex justify-end items-center w-[40%]' >
-            <div className=' mr-5'>
-              <FormControl className="w-44 mr-5">
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-6 border border-amber-200">
+              <h1 className="text-gray-600 font-semibold mb-3">Total Collectors</h1>
+              <div className="flex justify-start items-center">
+                <div className="flex justify-center items-center bg-gradient-to-r from-amber-500 to-yellow-600 rounded-full aspect-square h-[60px]">
+                  <GroupIcon sx={{ fontSize: 30, color: 'white' }}/>
+                </div>
+                <span className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-yellow-700 bg-clip-text text-transparent ml-4">{collectors.length}</span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
+              <h1 className="text-gray-600 font-semibold mb-3">Available Collectors</h1>
+              <div className="flex justify-start items-center">
+                <div className="flex justify-center items-center bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full aspect-square h-[60px]">
+                  <GroupAddIcon sx={{ fontSize: 30, color: 'white' }}/>
+                </div>
+                <span className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent ml-4">{collectors.filter((collector) => collector.statusOfCollector === 'Available').length}</span>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-6 border border-red-200">
+              <h1 className="text-gray-600 font-semibold mb-3">Unavailable Collectors</h1>
+              <div className="flex justify-start items-center">
+                <div className="flex justify-center items-center bg-gradient-to-r from-red-500 to-rose-600 rounded-full aspect-square h-[60px]">
+                  <GroupRemoveIcon sx={{ fontSize: 30, color: 'white' }}/>
+                </div>
+                <span className="text-4xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent ml-4">{collectors.filter((collector) => collector.statusOfCollector === 'Not-Available').length}</span>
+              </div>
+            </div>
+        </div>
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h1 className="text-xl font-semibold text-gray-800 mb-4">Authorized Collectors Under {currentWma.wmaname}</h1>
+        <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <input onChange={(e) => setSearchFilter(e.target.value)} type='text' placeholder='Search Collector...' className="py-3 px-4 border-2 rounded-xl border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none w-full md:w-[40%] transition-all"/>
+          <div className="flex justify-end items-center gap-4 w-full md:w-auto">
+              <FormControl className="w-44">
                 <InputLabel id="type-filter-label">Filter By Status</InputLabel>
                 <Select
                   labelId="type-filter-label"
                   value={statusFilter}
-                  label="Type"
+                  label="Filter By Status"
                   onChange={(e) => setStatusFilter(e.target.value)}
+                  className="rounded-xl"
                 >
                   <MenuItem value="">All</MenuItem>
                   <MenuItem value="Available">Available</MenuItem>
                   <MenuItem value="Not-Available">Not-available</MenuItem>
                 </Select>
               </FormControl>
-            </div>
-            <FormControl className="w-54">
               <Button
-                className="h-14"
                 variant="contained"
-                color="success"
-                onClick={() =>{navigate("/wma/collectors/create")}}>
-                Add New Collector
+                className="!bg-gradient-to-r !from-purple-600 !to-indigo-700 !rounded-xl !px-6 !py-3 !normal-case !font-semibold"
+                onClick={() =>{navigate("/wma/collectors/create")}}
+              >
+                + Add Collector
               </Button>
-            </FormControl>
           </div>
         </div>
+        <div className="overflow-x-auto rounded-xl">
         <table className="w-full text-sm text-left rtl:text-right text-gray-500 :text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 :bg-gray-700 :text-gray-400">
             <tr>
@@ -262,21 +277,25 @@ function ViewCollectors() {
                         {collector.statusOfCollector}
                       </span>
                     </td>
-                    <td className="px- py-4 text-right">
-                      <a
+                    <td className="px-4 py-4 text-right">
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        className="!border-purple-500 !text-purple-600 hover:!bg-purple-50 !rounded-lg !min-w-0 !p-2"
                         onClick={() => handleEditClick(collector)}
-                        className="font-medium text-gray-400 :text-blue-500 cursor-pointer"
                       >
-                        <EditIcon />
-                      </a>
+                        <EditIcon fontSize="small" />
+                      </Button>
                     </td>
                     <td className="px-3 py-4 text-right">
-                      <a
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        className="!border-red-500 !text-red-600 hover:!bg-red-50 !rounded-lg !min-w-0 !p-2"
                         onClick={() => handleClickOpen(collector._id)}
-                        className="font-medium text-red-600 :text-blue-500 cursor-pointer"
                       >
-                        <DeleteIcon />
-                      </a>
+                        <DeleteIcon fontSize="small" />
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -310,7 +329,8 @@ function ViewCollectors() {
           </Button>
         </DialogActions>
       </Dialog>
-      <ToastContainer />
+      </div>
+      </div>
     </WMADrawer>
   )
 }

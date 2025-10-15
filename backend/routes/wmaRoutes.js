@@ -9,6 +9,9 @@ import {
     deleteWMAById,
     getWMAById,
     updateWMAById,
+    getWMAServiceAreas,
+    addServiceArea,
+    removeServiceArea,
 } from "../controllers/wmaController.js";
 
 import { authenticate, authenticateWMA, authorizeAdmin } from "../middlewares/authMiddleware.js";
@@ -26,6 +29,16 @@ router
   .route("/wmaprofile")
   .get(authenticateWMA, getCurrentWMAProfile)
   .put(authenticateWMA, updateCurrentWMAProfile);
+
+// Service Area Management Routes
+router
+  .route("/service-areas")
+  .get(authenticateWMA, getWMAServiceAreas);
+
+router
+  .route("/service-areas/:areaId")
+  .post(authenticateWMA, addServiceArea)
+  .delete(authenticateWMA, removeServiceArea);
 
 // Administrator Routes
 router

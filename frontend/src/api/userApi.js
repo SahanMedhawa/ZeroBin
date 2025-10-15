@@ -66,9 +66,7 @@ class AuthService {
 
   async deleteUser(id) {
     try {
-      const deletedUser = await this.api.delete(`users/${id}`, {
-        withCredentials: true,
-      });
+      const deletedUser = await this.api.delete(`users/${id}`);
       return deletedUser.data;
     } catch (error) {
       console.error("Error deleting user:", error.message);

@@ -98,9 +98,9 @@ const WMAProfile = () => {
       };
 
       const response = await AuthService.updateWma(updatedProfileData);
-      toast.success("Your Profile Updated successfully!", {
+      toast.success("✓ Profile updated successfully!", {
         position: "bottom-right",
-        autoClose: 5000,
+        autoClose: 4000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -121,147 +121,183 @@ const WMAProfile = () => {
       setIsLoading(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      toast.error("✕ Failed to update profile", {
+        position: "bottom-right",
+        autoClose: 4000,
+        theme: "light",
+      });
       setIsLoading(false);
     }
   };
 
   return (
-    <div>
-      <WMADrawer>
-        <div className="flex flex-col items-center justify-center ">
-          <div className=" w-full rounded border-[3px]  p-5 ">
-            <div className=" flex justify-around ">
-              <div className="flex justify-center w-full">
-                <div className=" my-5 justify-center flex mx-5 ">
+    <WMADrawer>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-indigo-50 p-6">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-700 to-indigo-800 bg-clip-text text-transparent">
+            WMA Profile
+          </h1>
+          <p className="text-gray-600 mt-2">Manage your authority information</p>
+        </div>
+
+          {/* Profile Card */}
+          <div className="bg-white shadow-xl rounded-2xl p-8 mb-6">
+            <div className="flex flex-col lg:flex-row justify-between gap-8">
+              <div className="flex flex-col md:flex-row gap-8 flex-1">
+                <div className="flex justify-center md:justify-start">
                   <img
                     src={profile?.profileImage || wma}
                     alt="Profile Picture"
-                    className="w-[120px] h-[120px] rounded-full"
+                    className="w-32 h-32 rounded-full border-4 border-purple-200 shadow-lg object-cover"
                   />
                 </div>
 
-                <div className="justify-center flex">
-                  <div className=" flex flex-col justify-center space-y-3">
-                    <div className=" text-[24px] font-bold text-[#48752c]">
-                      <span>{profile?.wmaname}</span>
-                    </div>
-                    <div className="">
-                      <img
-                        src={address}
-                        alt="Logo"
-                        className="mx-auto w-[20px] h-[20px] mr-4  inline-block"
-                      />
-                      <span>{profile?.address}</span>
-                    </div>
-                    <div className="">
-                      <img
-                        src={email}
-                        alt="Logo"
-                        className="mx-auto w-[20px] h-[20px] mr-4  inline-block"
-                      />
-                      <span>{profile?.email}</span>
-                    </div>
-                    <div className="">
-                      <img
-                        src={phone}
-                        alt="Logo"
-                        className="mx-auto w-[20px] h-[20px] mr-4 inline-block"
-                      />
-                      <span>{profile?.contact}</span>
-                    </div>
+                <div className="flex flex-col justify-center space-y-3">
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-700 bg-clip-text text-transparent">
+                    {profile?.wmaname}
+                  </h2>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <img
+                      src={address}
+                      alt="Location"
+                      className="w-5 h-5"
+                    />
+                    <span>{profile?.address}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <img
+                      src={email}
+                      alt="Email"
+                      className="w-5 h-5"
+                    />
+                    <span>{profile?.email}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <img
+                      src={phone}
+                      alt="Phone"
+                      className="w-5 h-5"
+                    />
+                    <span>{profile?.contact}</span>
                   </div>
                 </div>
               </div>
-              <div className="relative flex flex-col items-end justify-end w-[30%]">
+              
+              <div className="relative flex flex-col items-end justify-between">
                 <div
                   onClick={toggleDropdownforInformation}
-                  className="absolute top-0 right-0 bg-gray-300 hover:bg-[#f9da78] w-[50px] shadow-xl h-[50px] flex items-center justify-center rounded-full mb-2"
+                  className="bg-gradient-to-r from-purple-100 to-indigo-100 hover:from-purple-200 hover:to-indigo-200 w-14 h-14 flex items-center justify-center rounded-full cursor-pointer transition-all shadow-lg"
                 >
                   <img
                     src={editprofile}
                     alt="edit"
-                    className="mx-auto w-[25px] h-[25px] inline-block"
+                    className="w-7 h-7"
                   />
                 </div>
-                <div className="items-center justify-center px-5 flex flex-col bg-[#48752c] text-center rounded-3xl shadow-lg p-2">
-                  <h1 className="text-[24px] font-bold text-[#f9da78]">
+                <div className="flex flex-col items-center justify-center px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-700 text-center rounded-2xl shadow-lg">
+                  <h1 className="text-3xl font-bold text-amber-300">
                     {profile?.authNumber}
                   </h1>
-                  <h1 className="text-[16px] text-white">Auth Number</h1>
+                  <h2 className="text-sm text-white mt-1">Auth Number</h2>
                 </div>
               </div>
             </div>
           </div>
-          <div className="w-full h-full py-5 flex items-start">
-            <div className=" w-[100%] h-auto rounded border-[3px] p-3 mr-2 border-[#48752c]">
-              <div className="flex justify-between items-center">
-                <h1 className="font-bold text-[21px] my-1">
-                  Update Personal Information
-                </h1>
-                <img
-                  src={dropdown}
-                  alt="dropdown"
-                  className={`w-[20px] h-[20px] cursor-pointer transition-transform duration-300 ${
-                    isToggleDropdownforInformation ? "rotate-180" : "rotate-0"
-                  }`}
-                  onClick={toggleDropdownforInformation}
-                />
-              </div>
+
+          {/* Update Information Card */}
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+            <div className="flex justify-between items-center p-6 bg-gradient-to-r from-purple-50 to-indigo-50 border-b border-purple-100">
+              <h2 className="text-2xl font-bold text-gray-800">
+                Update Personal Information
+              </h2>
+              <img
+                src={dropdown}
+                alt="dropdown"
+                className={`w-6 h-6 cursor-pointer transition-transform duration-300 ${
+                  isToggleDropdownforInformation ? "rotate-180" : "rotate-0"
+                }`}
+                onClick={toggleDropdownforInformation}
+              />
+            </div>
               {isToggleDropdownforInformation && (
-                <div className="m-4">
-                  <div className="flex flex-col justify-around space-y-2 ">
-                    <h1 className="font-bold">Name: </h1>
+                <div className="p-6 space-y-6">
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="wmaname"
                       value={updateProfile.wmaname}
                       onChange={handleInputChange}
                       placeholder="Enter your name"
-                      className="py-2 px-5 bg-[#64625c1a] text-[16px] rounded-br-full rounded-bl-full rounded-tl-full"
+                      className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
                     />
                   </div>
 
-                  <div className="items-center flex flex-col justify-center">
-                    <div className="w-full my-2">
-                      <h1 className="font-bold">Current Address: </h1>
-                      <input
-                        type="text"
-                        name="address"
-                        value={updateProfile.address}
-                        onChange={handleInputChange}
-                        placeholder="Enter your address"
-                        className="py-2 px-5 w-full bg-[#64625c1a] text-[16px] rounded-br-full rounded-bl-full rounded-tl-full"
-                      />
-                    </div>
-                    <div className="w-full my-2">
-                      <h1 className="font-bold"> Upload Profile Image </h1>
-                      <input
-                        type="file"
-                        name="image"
-                        id="image"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 :bg-gray-700 :border-gray-600 :placeholder-gray-400 :text-white :focus:ring-blue-500 :focus:border-blue-500"
-                        onChange={(e) => setImageSelected(e.target.files[0])}
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Current Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={updateProfile.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter your address"
+                      className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all"
+                    />
                   </div>
-                  <div className="mt-5 w-full text-center bg-[#48752c] text-[16px] rounded-full inline-block">
+
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Upload Profile Image
+                    </label>
+                    <input
+                      type="file"
+                      name="image"
+                      id="image"
+                      className="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100 file:cursor-pointer"
+                      onChange={(e) => setImageSelected(e.target.files[0])}
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-4">
                     <button
-                      className="px-5 py-2 text-center text-white"
+                      className="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-xl font-semibold hover:shadow-xl hover:scale-105 transition-all shadow-lg"
                       onClick={handleUpdate}
+                      disabled={isLoading}
                     >
-                      Update Information
+                      {isLoading ? 'Updating...' : 'Update Information'}
                     </button>
                   </div>
                 </div>
               )}
-            </div>
           </div>
         </div>
 
-        <ToastContainer />
+        <ToastContainer
+          position="bottom-right"
+          autoClose={4000}
+          hideProgressBar={false}
+          newestOnTop={true}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+          toastClassName="!bg-white !shadow-2xl !rounded-2xl !border-l-4 !border-purple-500"
+          bodyClassName="text-gray-800 font-medium"
+          progressClassName="!bg-gradient-to-r !from-purple-600 !to-indigo-700"
+          closeButton={
+            <button className="text-gray-400 hover:text-gray-600 transition-colors">
+              ✕
+            </button>
+          }
+        />
       </WMADrawer>
-    </div>
   );
 };
 

@@ -32,6 +32,17 @@ const wmaSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    servicedAreas: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Area",
+      },
+    ],
+    ratePerCollection: {
+      type: Number,
+      default: 500,
+      required: false,
+    },
   },
   { timestamps: true }
 );

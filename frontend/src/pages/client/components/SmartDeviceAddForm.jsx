@@ -107,14 +107,14 @@ export default function SmartDeviceRequestForm() {
         onClick={handleOpenModal}
         className="px-4 py-2 bg-green-800 text-white rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
       >
-        Request Smart Device
+        Request New Bin Installation
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="relative w-[90%] max-w-2xl bg-white p-8 rounded-lg shadow-lg">
             <h1 className="text-2xl mb-5 font-bold text-center text-gray-800">
-              Smart Device Request
+              Request Smart Bin Installation
             </h1>
             <button
               onClick={handleCloseModal}

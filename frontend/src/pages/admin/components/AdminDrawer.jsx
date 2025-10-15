@@ -44,15 +44,12 @@ const AdminDrawer = ({ children }) => {
       ),
       label: 'Dashboard',
     },
-    {
-      path: '/admin/devices',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      ),
-      label: 'Devices',
-    },
+    // Removed: Old smart device system - Dead code (replaced by Smart Bin system)
+    // {
+    //   path: '/admin/devices',
+    //   icon: (...),
+    //   label: 'Devices',
+    // },
     {
       path: '/admin/garbage',
       icon: (
@@ -72,6 +69,15 @@ const AdminDrawer = ({ children }) => {
       label: 'Residents',
     },
     {
+      path: '/admin/areas',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
+      ),
+      label: 'Areas',
+    },
+    {
       path: '/admin/wmas',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,15 +94,6 @@ const AdminDrawer = ({ children }) => {
         </svg>
       ),
       label: 'Collectors',
-    },
-    {
-      path: '/admin/schedules',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-      label: 'Schedules',
     },
     {
       path: '/admin/transactions',
