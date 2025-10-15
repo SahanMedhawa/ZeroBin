@@ -25,6 +25,7 @@ import { getUserBin, checkUserHasBin } from '../../../api/garbageApi';
 import RegisterBin from './RegisterBin';
 import SensorControl from './SensorControl';
 import SensorHistory from './SensorHistory';
+import UserDrawer from '../components/UserDrawer';
 
 /**
  * BinManagement Component
@@ -102,20 +103,27 @@ const BinManagement = () => {
   // Loading state
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
+      <UserDrawer>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+          <CircularProgress />
+        </Box>
+      </UserDrawer>
     );
   }
 
   // No bin registered - show registration form
   if (!hasBin) {
-    return <RegisterBin onBinRegistered={handleRefresh} />;
+    return (
+      <UserDrawer>
+        <RegisterBin onBinRegistered={handleRefresh} />
+      </UserDrawer>
+    );
   }
 
   // Bin registered - show management interface
   return (
-    <Box sx={{ p: 3 }}>
+    <UserDrawer>
+      <Box sx={{ p: 3 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" fontWeight="bold">
@@ -297,6 +305,7 @@ const BinManagement = () => {
         </Grid>
       </Grid>
     </Box>
+    </UserDrawer>
   );
 };
 

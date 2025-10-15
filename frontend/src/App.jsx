@@ -16,7 +16,7 @@ import UserTransactionHistory from "./pages/client/transaction/UserTransactionHi
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminGarbage from "./pages/admin/garbage/AdminGarbage";
 import AdminTransactions from "./pages/admin/transactions/AdminTransactions";
-import UserSmartDeviceRequest from "./pages/client/smartDevice/UserSmartDeviceRequest";
+// Removed: UserSmartDeviceRequest - Dead code (one bin per user enforced)
 import AdminGarbageUpdate from "./pages/admin/garbage/AdminGarbageUpdate";
 import AdminUsers from "./pages/admin/users/AdminUsers";
 import AdminWMAs from "./pages/admin/wmas/AdminWMAs";
@@ -32,17 +32,19 @@ import AdminCollectorUpdate from "./pages/admin/collectors/AdminCollectorUpdate"
 import WmaCollectorUpdate from "./pages/wma/collectors/UpdateCollector";
 import WmaCollectorCreate from "./pages/wma/collectors/AddCollectors";
 import ScheduleUpdate from "./pages/wma/schedule/ScheduleUpdate";
-import AdminDevice from "./pages/admin/device/AdminDevice";
-import AdminDeviceUpdate from "./pages/admin/device/AdminDeviceUpdate";
+// Removed: Admin smart device pages - Dead code (replaced by Smart Bin system)
+// import AdminDevice from "./pages/admin/device/AdminDevice";
+// import AdminDeviceUpdate from "./pages/admin/device/AdminDeviceUpdate";
 
 import CollectorLogin from "./pages/collector/auth/CollectorLogin";
 import CollectorLoginRedirect from "./pages/collector/auth/CollectorLoginRedirect";
 import CollectorDashboard from "./pages/collector/dashboard/CollectorDashboard";
 import CollectorSchedule from "./pages/collector/schedule/CollectorSchedule";
-import CollectorMap from "./pages/collector/map/CollectorMap";
+// Removed: Old smart device pages - Dead code (replaced by FullBinsCollector)
+// import CollectorMap from "./pages/collector/map/CollectorMap";
 import CollectorScanner from "./pages/collector/scanner/CollectorScanner";
 import CollectorEarnings from "./pages/collector/earnings/CollectorEarnings";
-import UpdateGarbage from "./pages/collector/updateGarbage/UpdateGarbage";
+// import UpdateGarbage from "./pages/collector/updateGarbage/UpdateGarbage";
 import AdminAreaManagement from "./pages/admin/areas/AdminAreaManagement";
 import WMAServiceAreas from "./pages/wma/areas/WMAServiceAreas";
 
@@ -65,7 +67,8 @@ function App() {
 
           {/* Protected User routes */}
           <Route path="/user/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-          <Route path="/user/my-garbage" element={<ProtectedRoute><UserGarbageRequest /></ProtectedRoute>} />
+          {/* Removed: Garbage Request page - replaced by Smart Bin system */}
+          {/* <Route path="/user/my-garbage" element={<ProtectedRoute><UserGarbageRequest /></ProtectedRoute>} /> */}
           <Route path="/user/my-bin" element={<ProtectedRoute><BinManagement /></ProtectedRoute>} />
           <Route path="/user/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route
@@ -76,10 +79,8 @@ function App() {
             path="/user/my-transaction/history"
             element={<ProtectedRoute><UserTransactionHistory /></ProtectedRoute>}
           />
-          <Route
-            path="/user/smartDevice"
-            element={<ProtectedRoute><UserSmartDeviceRequest /></ProtectedRoute>}
-          />
+          {/* Removed: Smart Device Request - one bin per user enforced */}
+          {/* <Route path="/user/smartDevice" element={<ProtectedRoute><UserSmartDeviceRequest /></ProtectedRoute>} /> */}
 
           {/* Protected WMA Routes */}
           <Route path="/wma/dashboard" element={<ProtectedRoute><WMADashboard /></ProtectedRoute>} />
@@ -110,10 +111,12 @@ function App() {
           <Route path="/collector/dashboard" element={<CollectorProtectedRoute><CollectorDashboard /></CollectorProtectedRoute>} />
           <Route path="/collector/full-bins" element={<CollectorProtectedRoute><FullBinsCollector /></CollectorProtectedRoute>} />
           <Route path="/collector/schedule" element={<CollectorProtectedRoute><CollectorSchedule /></CollectorProtectedRoute>} />
-          <Route path="/collector/map" element={<CollectorProtectedRoute><CollectorMap /></CollectorProtectedRoute>} />
+          {/* Removed: Old smart device map - replaced by FullBinsCollector map view */}
+          {/* <Route path="/collector/map" element={<CollectorProtectedRoute><CollectorMap /></CollectorProtectedRoute>} /> */}
           <Route path="/collector/scanner" element={<CollectorProtectedRoute><CollectorScanner /></CollectorProtectedRoute>} />
           <Route path="/collector/earnings" element={<CollectorProtectedRoute><CollectorEarnings /></CollectorProtectedRoute>} />
-          <Route path="/collector/updateGarbage" element={<CollectorProtectedRoute><UpdateGarbage /></CollectorProtectedRoute>} />
+          {/* Removed: Old updateGarbage - replaced by FullBinsCollector collection */}
+          {/* <Route path="/collector/updateGarbage" element={<CollectorProtectedRoute><UpdateGarbage /></CollectorProtectedRoute>} /> */}
 
           {/* Protected Admin routes */}
           <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
@@ -134,11 +137,9 @@ function App() {
           />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/wmas" element={<ProtectedRoute><AdminWMAs /></ProtectedRoute>} />
-          <Route path="/admin/devices" element={<ProtectedRoute><AdminDevice /></ProtectedRoute>} />
-          <Route
-            path="/admin/devices/update"
-            element={<ProtectedRoute><AdminDeviceUpdate /></ProtectedRoute>}
-          />
+          {/* Removed: Admin smart device routes - Dead code (replaced by Smart Bin system) */}
+          {/* <Route path="/admin/devices" element={<ProtectedRoute><AdminDevice /></ProtectedRoute>} /> */}
+          {/* <Route path="/admin/devices/update" element={<ProtectedRoute><AdminDeviceUpdate /></ProtectedRoute>} /> */}
         </Routes>
       </Router>
     </>

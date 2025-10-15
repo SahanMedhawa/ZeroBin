@@ -126,37 +126,6 @@ const updateScheduleStatus = async (scheduleId, status) => {
   }
 };
 
-// Smart Device APIs
-const getSmartDeviceById = async (deviceId) => {
-  try {
-    const device = await new API().get(`smartDevice/${deviceId}`);
-    return device;
-  } catch (error) {
-    console.error("Error fetching smart device:", error.message);
-    throw error;
-  }
-};
-
-const updateSmartDevice = async (deviceId, updates) => {
-  try {
-    const updated = await new API().put(`smartDevice/${deviceId}`, updates);
-    return updated;
-  } catch (error) {
-    console.error("Error updating smart device:", error.message);
-    throw error;
-  }
-};
-
-const getAllSmartDevices = async () => {
-  try {
-    const devices = await new API().get("smartDevice");
-    return devices;
-  } catch (error) {
-    console.error("Error fetching smart devices:", error.message);
-    throw error;
-  }
-};
-
 // Transaction APIs
 const createTransaction = async (transactionData) => {
   try {
@@ -191,9 +160,7 @@ export {
     logoutCollector,
     getCollectorSchedules,
     updateScheduleStatus,
-    getSmartDeviceById,
-    updateSmartDevice,
-    getAllSmartDevices,
+    // Removed: Smart Device APIs - Dead code (replaced by Smart Bin system)
     createTransaction,
     getAreaById
 };

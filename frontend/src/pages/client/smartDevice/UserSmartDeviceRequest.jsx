@@ -129,13 +129,23 @@ const UserSmartDeviceRequest = () => {
   return (
     <>
       <UserDrawer>
+        <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+          <h2 className="text-lg font-semibold text-blue-900 mb-2">Request Smart Bin Installation</h2>
+          <p className="text-sm text-blue-800">
+            Need a smart bin installed at your location? Submit an installation request here. 
+            Our team will review and approve your request.
+          </p>
+          <p className="text-sm text-blue-700 mt-2 italic">
+            💡 Already have a registered bin? Manage it on the <span className="font-semibold">Smart Bin</span> page.
+          </p>
+        </div>
         <div className="flex justify-end mb-2">
           <SmartDeviceAddForm />
         </div>
         <div className="mb-28 shadow-md rounded-lg">
           <table className="w-full text-sm text-left rtl:text-right text-gray-500 :text-gray-400">
             <caption className="p-5 text-lg font-semibold text-left rtl:text-right text-[#48752c] bg-white :text-white :bg-gray-800">
-              Smart Device Requests
+              My Installation Requests
             </caption>
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 :bg-gray-700 :text-gray-400">
               <tr>

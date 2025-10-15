@@ -249,6 +249,12 @@ garbageSchema.methods.updateSensorLevel = function (
     this.autoNotificationSent = false;
   }
 
+  // IMPORTANT: If bin was collected and now goes High/Full again, reset status to Pending
+  // This allows collectors to see and collect it again
+  if (this.isVisibleToCollectors && this.status === "Collected") {
+    this.status = "Pending";
+  }
+
   return this;
 };
 

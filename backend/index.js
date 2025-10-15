@@ -18,7 +18,8 @@ import garbageRoutes from "./routes/garbageRoutes.js"; // fixed typo in garbageR
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import areaRoutes from "./routes/areaRoutes.js"; // Import areaRoutes
-import smartDeviceRoutes from "./routes/smartDeviceRoutes.js"; // Import smartDeviceRoutes
+// Removed: Smart Device routes - replaced by Smart Bin system (one bin per user)
+// import smartDeviceRoutes from "./routes/smartDeviceRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js"; // Import contactRoutes
 
 dotenv.config();
@@ -82,8 +83,8 @@ app.use("/api/transactions", transactionRoutes);
 // Area Route
 app.use("/api/areas", areaRoutes);
 
-// smarDevice Route
-app.use("/api/smartDevices", smartDeviceRoutes);
+// Removed: Smart Device routes - replaced by Smart Bin system (one bin per user)
+// app.use("/api/smartDevices", smartDeviceRoutes);
 
 // Contact Route
 app.use("/api/contacts", contactRoutes);

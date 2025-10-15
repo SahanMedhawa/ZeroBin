@@ -37,6 +37,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getFullBinsForCollector, markBinCollected } from '../../../api/garbageApi';
+import CollectorDrawer from '../components/CollectorDrawer';
 
 // Fix Leaflet default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -224,16 +225,21 @@ const FullBinsCollector = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
+      <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <CollectorDrawer />
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', ml: { sm: '240px' } }}>
+          <CircularProgress />
+        </Box>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      <CollectorDrawer />
+      <Box sx={{ flexGrow: 1, ml: { sm: '240px' }, p: 3 }}>
+        {/* Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" fontWeight="bold">
             <DeleteIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
@@ -361,9 +367,22 @@ const FullBinsCollector = () => {
 
           {/* Map View */}
           {viewMode === 'map' && (
-            <Card elevation={3}>
-              <CardContent>
-                <Box sx={{ height: 600, borderRadius: 2, overflow: 'hidden' }}>
+            <Card className="shadow-2xl rounded-xl overflow-hidden border-t-4 border-purple-500">
+              <CardContent className="p-0">
+                <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4">
+                  <div className="flex items-center gap-3">
+                    <MapIcon sx={{ fontSize: 32 }} />
+                    <div>
+                      <Typography variant="h6" className="font-bold">
+                        Interactive Map View
+                      </Typography>
+                      <Typography variant="body2" className="text-purple-100">
+                        Click on markers to view bin details and collect
+                      </Typography>
+                    </div>
+                  </div>
+                </div>
+                <Box className="h-[600px] relative">
                   <MapContainer
                     center={mapCenter}
                     zoom={13}
@@ -380,35 +399,58 @@ const FullBinsCollector = () => {
                         icon={createCustomIcon(bin.sensorData.fillLevel)}
                       >
                         <Popup>
-                          <Box sx={{ minWidth: 200 }}>
-                            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                              {bin.binId}
-                            </Typography>
-                            <Typography variant="body2" gutterBottom>
-                              <strong>Fill Level:</strong> {bin.sensorData.fillLevel} ({bin.sensorData.fillPercentage}%)
-                            </Typography>
-                            <Typography variant="body2" gutterBottom>
-                              <strong>Address:</strong> {bin.address}
-                            </Typography>
-                            <Typography variant="body2" gutterBottom>
-                              <strong>User:</strong> {bin.user?.username}
-                            </Typography>
-                            {bin.user?.contact && (
-                              <Typography variant="body2" gutterBottom>
-                                <strong>Contact:</strong> {bin.user.contact}
+                          <div className="min-w-[240px] p-2">
+                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-lg mb-3 shadow-lg">
+                              <Typography variant="subtitle1" className="font-bold">
+                                {bin.binId}
                               </Typography>
-                            )}
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between bg-red-50 rounded p-2">
+                                <Typography variant="body2" className="text-gray-600 font-medium">
+                                  Fill Level:
+                                </Typography>
+                                <span className="font-bold text-red-600">
+                                  {bin.sensorData.fillLevel} ({bin.sensorData.fillPercentage}%)
+                                </span>
+                              </div>
+                              <div className="bg-blue-50 rounded p-2">
+                                <Typography variant="body2" className="text-gray-600 font-medium mb-1">
+                                  Address:
+                                </Typography>
+                                <Typography variant="body2" className="text-gray-800">
+                                  {bin.address}
+                                </Typography>
+                              </div>
+                              <div className="bg-purple-50 rounded p-2">
+                                <Typography variant="body2" className="text-gray-600 font-medium mb-1">
+                                  User:
+                                </Typography>
+                                <Typography variant="body2" className="text-gray-800">
+                                  {bin.user?.username}
+                                </Typography>
+                              </div>
+                              {bin.user?.contact && (
+                                <div className="bg-orange-50 rounded p-2">
+                                  <Typography variant="body2" className="text-gray-600 font-medium mb-1">
+                                    Contact:
+                                  </Typography>
+                                  <Typography variant="body2" className="text-gray-800">
+                                    {bin.user.contact}
+                                  </Typography>
+                                </div>
+                              )}
+                            </div>
                             <Button
                               variant="contained"
-                              color="success"
                               size="small"
                               fullWidth
-                              sx={{ mt: 1 }}
                               onClick={() => handleCollectClick(bin)}
+                              className="mt-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg text-white font-bold py-2"
                             >
-                              Collect
+                              Collect Bin
                             </Button>
-                          </Box>
+                          </div>
                         </Popup>
                       </Marker>
                     ))}
@@ -429,6 +471,7 @@ const FullBinsCollector = () => {
           onCollected={handleBinCollected}
         />
       )}
+      </Box>
     </Box>
   );
 };

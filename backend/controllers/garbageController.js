@@ -167,14 +167,18 @@ const updateSensorData = asyncHandler(async (req, res) => {
   await bin.populate("user", "username email contact");
   await bin.populate("area", "name district");
 
-  const statusMessage =
-    bin.isVisibleToCollectors && fillLevel === "Full"
-      ? "Bin is now full and visible to collectors!"
-      : bin.isVisibleToCollectors && fillLevel === "High"
-      ? "Bin is high and visible to collectors!"
-      : !bin.isVisibleToCollectors
-      ? "Sensor data updated successfully"
-      : "Sensor data updated successfully";
+  // Create appropriate status message
+  let statusMessage = "Sensor data updated successfully";
+  
+  if (bin.isVisibleToCollectors && fillLevel === "Full") {
+    statusMessage = bin.status === "Pending" 
+      ? "Bin is now full and visible to collectors again!"
+      : "Bin is now full and visible to collectors!";
+  } else if (bin.isVisibleToCollectors && fillLevel === "High") {
+    statusMessage = bin.status === "Pending"
+      ? "Bin is high and visible to collectors again!"
+      : "Bin is high and visible to collectors!";
+  }
 
   res.json({
     success: true,
