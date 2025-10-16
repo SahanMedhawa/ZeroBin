@@ -31,6 +31,16 @@ const getAllSchedulesInWma = async (id) => {
   }
 };
 
+const getActiveSchedules = async () => {
+  try {
+    const schedules = await new API().get("schedule/active", {});
+    return schedules;
+  } catch (error) {
+    console.error("Error fetching active schedules:", error.message);
+    throw error;
+  }
+};
+
 // const getAllDriverGarbages = async () => {
 //   try {
 //     const garbages = await new API().get("garbage/driver-garbage", {});
@@ -96,5 +106,6 @@ export {
     getAllSchedules,
     updateSchedule,
     deleteSchedule,
-    getAllSchedulesInWma
+    getAllSchedulesInWma,
+    getActiveSchedules
 };

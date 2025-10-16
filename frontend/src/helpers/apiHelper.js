@@ -53,9 +53,9 @@ class ApiHelper {
   }
 
   // General DELETE request
-  async delete(endpoint, token) {
+  async delete(endpoint, config = {}) {
     try {
-      const headers = this._getHeaders(token);
+      const headers = this._getHeaders(config.token);
       const response = await axios.delete(`${this.baseUrl}/${endpoint}`, {
         headers,
         withCredentials: true,

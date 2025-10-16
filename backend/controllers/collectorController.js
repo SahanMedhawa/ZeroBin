@@ -14,7 +14,7 @@ import { generateCollectorToken } from "../utils/createToken.js";
  * @returns {Object} - A JSON object containing the newly created schedule data
  */
 const createCollector = asyncHandler(async (req, res) => {
-  const { wmaId, truckNumber, collectorName, collectorNIC, contactNo } =
+  const { wmaId, truckNumber, collectorName, collectorNIC, contactNo, assignedAreas } =
     req.body;
 
   if (!wmaId || !truckNumber || !collectorName || !collectorNIC || !contactNo) {
@@ -29,9 +29,11 @@ const createCollector = asyncHandler(async (req, res) => {
     collectorNIC,
     contactNo,
     statusOfCollector: "Available",
+    assignedAreas: assignedAreas || [],
   });
 
   const createdCollector = await collector.save();
+  await createdCollector.populate('assignedAreas');
   res.status(201).json(createdCollector);
 });
 
@@ -93,7 +95,7 @@ const loginCollector = asyncHandler(async (req, res) => {
  */
 const getCurrentCollectorProfile = asyncHandler(async (req, res) => {
   console.log("req.collector:", req.collector);
-  const collector = await Collector.findById(req.collector._id);
+  const collector = await Collector.findById(req.collector._id).populate('assignedAreas');
   if (collector) {
     res.json({
       _id: collector._id,
@@ -103,6 +105,7 @@ const getCurrentCollectorProfile = asyncHandler(async (req, res) => {
       collectorNIC: collector.collectorNIC,
       contactNo: collector.contactNo,
       statusOfCollector: collector.statusOfCollector,
+      assignedAreas: collector.assignedAreas,
     });
   } else {
     res.status(404);
@@ -117,7 +120,9 @@ const getCurrentCollectorProfile = asyncHandler(async (req, res) => {
  * @returns {Array} - A list of all schedules
  */
 const getAllCollectors = asyncHandler(async (req, res) => {
-  const collectors = await Collector.find({}).populate("wmaId", "wmaname");
+  const collectors = await Collector.find({})
+    .populate("wmaId", "wmaname")
+    .populate("assignedAreas");
   res.json(collectors);
 });
 
@@ -166,6 +171,7 @@ const updateCollector = asyncHandler(async (req, res) => {
     collectorNIC,
     statusOfCollector,
     contactNo,
+    assignedAreas,
   } = req.body;
 
   const collector = await Collector.findById(req.params.id);
@@ -178,8 +184,13 @@ const updateCollector = asyncHandler(async (req, res) => {
     collector.contactNo = contactNo || collector.contactNo;
     collector.statusOfCollector =
       statusOfCollector || collector.statusOfCollector;
+    
+    if (assignedAreas !== undefined) {
+      collector.assignedAreas = assignedAreas;
+    }
 
     const updatedCollector = await collector.save();
+    await updatedCollector.populate('assignedAreas');
     res.json(updatedCollector);
   } else {
     res.status(404);

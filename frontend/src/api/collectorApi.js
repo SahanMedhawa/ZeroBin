@@ -2,10 +2,13 @@ import API from "../helpers/apiHelper";
 
 const createCollector = async (collector) => {
   try {
+    console.log("API call: Creating collector with data:", collector);
     const createdCollector = await new API().post("collector", collector);
+    console.log("API response:", createdCollector);
     return createdCollector;
   } catch (error) {
-    console.error("Error creating collector:", error.message);
+    console.error("Error creating collector in API:", error);
+    console.error("Error message:", error.message);
     throw error; // Rethrow the error for the component to handle
   }
 };
@@ -103,9 +106,10 @@ const logoutCollector = async () => {
 };
 
 // Schedule APIs
-const getCollectorSchedules = async () => {
+const getCollectorSchedules = async (options = {}) => {
   try {
-    const schedules = await new API().get("schedule/collector-schedules");
+    // options can include: { limit, fields, status }
+    const schedules = await new API().get("schedule/collector-schedules", options);
     return schedules;
   } catch (error) {
     console.error("Error fetching collector schedules:", error.message);
@@ -115,41 +119,10 @@ const getCollectorSchedules = async () => {
 
 const updateScheduleStatus = async (scheduleId, status) => {
   try {
-    const updated = await new API().put(`schedule/${scheduleId}`, { status });
+    const updated = await new API().put(`schedule/${scheduleId}/status`, { status });
     return updated;
   } catch (error) {
     console.error("Error updating schedule status:", error.message);
-    throw error;
-  }
-};
-
-// Smart Device APIs
-const getSmartDeviceById = async (deviceId) => {
-  try {
-    const device = await new API().get(`smartDevice/${deviceId}`);
-    return device;
-  } catch (error) {
-    console.error("Error fetching smart device:", error.message);
-    throw error;
-  }
-};
-
-const updateSmartDevice = async (deviceId, updates) => {
-  try {
-    const updated = await new API().put(`smartDevice/${deviceId}`, updates);
-    return updated;
-  } catch (error) {
-    console.error("Error updating smart device:", error.message);
-    throw error;
-  }
-};
-
-const getAllSmartDevices = async () => {
-  try {
-    const devices = await new API().get("smartDevice");
-    return devices;
-  } catch (error) {
-    console.error("Error fetching smart devices:", error.message);
     throw error;
   }
 };
@@ -188,9 +161,7 @@ export {
     logoutCollector,
     getCollectorSchedules,
     updateScheduleStatus,
-    getSmartDeviceById,
-    updateSmartDevice,
-    getAllSmartDevices,
+    // Removed: Smart Device APIs - Dead code (replaced by Smart Bin system)
     createTransaction,
     getAreaById
 };

@@ -7,30 +7,34 @@ import User from "../models/userModel.js";
  * @desc    Create a new area
  * @access  Private/Admin
  * @param   {String} name - The name of the area (required)
- * @param   {String} type - The type of the area (either 'flat' or 'weightBased', required)
- * @param   {Number} rate - The rate for the area (required)
+ * @param   {String} district - The district of the area (required)
+ * @param   {String} postalCode - The postal code of the area (optional)
+ * @param   {Object} coordinates - The coordinates of the area (optional)
+ * @param   {Boolean} isActive - Whether the area is active (optional, default: true)
  * @returns {Object} - A JSON object containing the newly created area data
  */
 const createArea = asyncHandler(async (req, res) => {
-  const { name, type, rate } = req.body;
+  const { name, district, postalCode, coordinates, isActive } = req.body;
 
-  if (!name || !type || !rate) {
+  if (!name || !district) {
     res.status(400);
     throw new Error("Please fill all required fields.");
   }
 
-  // Check if the area already exists
-  const existingArea = await Area.findOne({ name });
+  // Check if the area already exists in the same district
+  const existingArea = await Area.findOne({ name, district });
   if (existingArea) {
     res.status(400);
-    throw new Error("Area already exists.");
+    throw new Error("Area already exists in this district.");
   }
 
   // Create the area
   const area = new Area({
     name,
-    type,
-    rate,
+    district,
+    postalCode,
+    coordinates,
+    isActive: isActive !== undefined ? isActive : true,
   });
 
   const createdArea = await area.save();
@@ -70,19 +74,23 @@ const getAreaById = asyncHandler(async (req, res) => {
  * @desc    Update an area by ID
  * @access  Private/Admin
  * @param   {String} name - The new name of the area (optional)
- * @param   {String} type - The new type of the area ('flat' or 'weightBased', optional)
- * @param   {Number} rate - The new rate of the area (optional)
+ * @param   {String} district - The new district of the area (optional)
+ * @param   {String} postalCode - The new postal code of the area (optional)
+ * @param   {Object} coordinates - The new coordinates of the area (optional)
+ * @param   {Boolean} isActive - The new active status (optional)
  * @returns {Object} - The updated area object
  */
 const updateArea = asyncHandler(async (req, res) => {
-  const { name, type, rate } = req.body;
+  const { name, district, postalCode, coordinates, isActive } = req.body;
 
   const area = await Area.findById(req.params.id);
 
   if (area) {
     area.name = name || area.name;
-    area.type = type || area.type;
-    area.rate = rate || area.rate;
+    area.district = district || area.district;
+    area.postalCode = postalCode !== undefined ? postalCode : area.postalCode;
+    area.coordinates = coordinates !== undefined ? coordinates : area.coordinates;
+    area.isActive = isActive !== undefined ? isActive : area.isActive;
 
     const updatedArea = await area.save();
     res.json(updatedArea);

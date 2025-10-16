@@ -11,6 +11,7 @@ const CollectorSchedule = () => {
   const [schedules, setSchedules] = useState([]);
   const [completedSchedules, setCompletedSchedules] = useState([]);
   const [inCompletedSchedules, setInCompletedSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,12 +19,25 @@ const CollectorSchedule = () => {
   }, []);
 
   const fetchSchedules = async () => {
+    // Use cached data for instant paint
+    const cached = localStorage.getItem('collectorSchedules');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        setSchedules(parsed);
+      } catch {}
+    }
+
     try {
-      const data = await getCollectorSchedules();
+      setLoading(true);
+      const data = await getCollectorSchedules({ limit: 20, fields: 'area,date,time,status' });
       setSchedules(data);
+      localStorage.setItem('collectorSchedules', JSON.stringify(data));
     } catch (error) {
       console.error('Error fetching schedules:', error);
-      toast.error('Failed to fetch schedules');
+      if (!cached) toast.error('Failed to fetch schedules');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,7 +112,7 @@ const CollectorSchedule = () => {
         {showActions && isFirst && schedule.status === 'Pending' && (
           <button
             onClick={() => handleStartRoute(schedule._id)}
-            className="w-full border-2 border-green-500 text-green-500 hover:bg-green-50 py-2 px-4 rounded-lg font-semibold transition-colors"
+            className="w-full bg-blue-900 hover:bg-blue-800 text-white py-2 px-4 rounded-lg font-semibold transition-colors"
           >
             Start Route
           </button>
@@ -107,7 +121,7 @@ const CollectorSchedule = () => {
         {showActions && isFirst && schedule.status === 'In Progress' && (
           <button
             onClick={() => handleMarkComplete(schedule._id)}
-            className="w-full border-2 border-orange-500 text-orange-500 hover:bg-orange-50 py-2 px-4 rounded-lg font-semibold transition-colors"
+            className="w-full bg-blue-900 hover:bg-blue-800 text-white py-2 px-4 rounded-lg font-semibold transition-colors"
           >
             Mark as Complete
           </button>
@@ -122,7 +136,7 @@ const CollectorSchedule = () => {
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">My Schedules</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">My Schedules</h1>
 
           {/* To Be Completed */}
           <div className="mb-8">
@@ -130,7 +144,18 @@ const CollectorSchedule = () => {
               To Be Completed
             </h2>
             <div className="bg-white rounded-lg shadow p-6">
-              {inCompletedSchedules.length > 0 ? (
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="animate-pulse border border-gray-200 rounded-lg p-4">
+                    <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-1/4"></div>
+                  </div>
+                  <div className="animate-pulse border border-gray-200 rounded-lg p-4">
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-1/3"></div>
+                  </div>
+                </div>
+              ) : inCompletedSchedules.length > 0 ? (
                 inCompletedSchedules.map((schedule, index) => (
                   <ScheduleCard
                     key={schedule._id}
@@ -154,7 +179,14 @@ const CollectorSchedule = () => {
           <div>
             <h2 className="text-xl font-semibold text-gray-700 mb-4">Completed</h2>
             <div className="bg-white rounded-lg shadow p-6">
-              {completedSchedules.length > 0 ? (
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="animate-pulse border border-gray-200 rounded-lg p-4">
+                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+                    <div className="h-3 bg-gray-100 rounded w-1/5"></div>
+                  </div>
+                </div>
+              ) : completedSchedules.length > 0 ? (
                 completedSchedules.map((schedule) => (
                   <ScheduleCard
                     key={schedule._id}

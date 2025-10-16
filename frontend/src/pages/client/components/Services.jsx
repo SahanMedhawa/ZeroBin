@@ -3,33 +3,33 @@ import React from "react";
 const WasteSolutions = () => {
   const solutions = [
     {
-      title: "Smart Waste Solutions",
+      title: "IoT Smart Bins",
       description:
-        "Track waste collection using smart devices attached to your bins. Real-time monitoring and data analytics for efficient waste management.",
+        "Connect IoT devices to your bins for automatic waste level monitoring and optimized collection scheduling with real-time alerts.",
       image:
         "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       alt: "Smart waste bin with digital display",
     },
     {
-      title: "Area-based Pricing",
+      title: "Service Area Marketplace",
       description:
-        "Customized pricing models based on location, waste volume, and collection frequency. Fair and transparent billing system.",
+        "Multiple waste management authorities compete in your area. Choose based on pricing, ratings, and service quality - transparency guaranteed.",
       image:
         "https://images.unsplash.com/photo-1726137569772-791c3b20b4cf?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       alt: "Digital map showing different pricing zones",
     },
     {
-      title: "Authority Registration",
+      title: "Authority Dashboard",
       description:
-        "Streamlined process for waste management authority registrations. Ensure compliance with local regulations and standards.",
+        "Powerful management portal for waste authorities. Register, manage service areas, assign collectors, and track operations seamlessly.",
       image:
         "https://plus.unsplash.com/premium_photo-1663040117567-ab8441cb7b04?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       alt: "Registration portal interface",
     },
     {
-      title: "Vehicle Tracking",
+      title: "Live Collector Tracking",
       description:
-        "Real-time GPS tracking of garbage collection vehicles. Optimize routes and monitor collection schedules efficiently.",
+        "Track your assigned collector's location in real-time. Get accurate ETAs and instant notifications when collection is complete.",
       image:
         "https://plus.unsplash.com/premium_photo-1661963024527-c855211ad31d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       alt: "Vehicle tracking system interface",
@@ -41,21 +41,19 @@ const WasteSolutions = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center">
-          <h3 className="text-green-600 text-lg uppercase font-semibold tracking-wide mb-">
-            WASTE MANAGEMENT SERVICES
+          <h3 className="text-emerald-600 text-lg uppercase font-semibold tracking-wide mb-">
+            ZEROBIN PLATFORM FEATURES
           </h3>
           <h2 className="text-[3.5rem] font-semibold text-gray-900 ">
-            Smart Solutions
+            Digital Solutions
           </h2>
         </div>
         <div className="mt- text-center mb-10">
           <p className="text-gray-500 max-w-2xl mx-auto">
-            Our comprehensive waste management solutions are designed to make
-            waste collection and processing more efficient, environmentally
-            friendly, and cost-effective for communities.
+            Experience next-generation waste management with our integrated digital platform. Connect residents, authorities, and collectors for seamless, transparent, and efficient service delivery.
           </p>
-          <button className="mt-8 bg-green-600 text-white px-8 py-3 rounded-full hover:bg-green-700 transition-colors duration-300">
-            Learn More
+          <button className="mt-8 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+            Explore Features
           </button>
         </div>
 
@@ -74,7 +72,7 @@ const WasteSolutions = () => {
                 />
               </div>
               <div className="p-6">
-                <h3 className="text-xl font-semibold text-green-700 mb-2">
+                <h3 className="text-xl font-semibold text-emerald-600 mb-2">
                   {solution.title}
                 </h3>
                 <p className="text-gray-600 text-sm">{solution.description}</p>

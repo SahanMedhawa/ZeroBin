@@ -6,82 +6,81 @@ import { ToastContainer, toast } from "react-toastify";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import wmaimage from "../../../assets/company.png";
-import DeleteIcon from "@mui/icons-material/Delete";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-
 function AdminWMAs() {
   const [wmas, setWMAs] = useState([]);
-  const [open, setOpen] = React.useState(false);
-  const [selectedWMAId, setSelectedWMAId] = useState(null);
-  const [loader, setLoader] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedWMAId, setSelectedWMAId] = useState(null);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
   const filteredWMAs = wmas.filter((wma) =>
-    wma.wmaname.toLowerCase().includes(searchTerm.toLowerCase())
+    wma.wmaname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    wma.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    wma.authNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleClickOpen = (id) => {
-    console.log(`id => `, id);
+  const handleDeleteClick = (id) => {
     setSelectedWMAId(id);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
+    setDeleteModalOpen(true);
   };
 
   const handleDeleteWMA = async () => {
     if (selectedWMAId) {
       try {
+        setLoading(true);
         await AuthService.deleteWma(selectedWMAId);
         setWMAs((currentWMA) =>
           currentWMA.filter((wma) => wma._id !== selectedWMAId)
         );
-        handleClose();
-        toast.success("WMA account has been deleted successfully!", {
+        setDeleteModalOpen(false);
+        toast.success("WMA account deleted successfully!", {
           position: "bottom-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
+          autoClose: 3000,
         });
       } catch (error) {
-        alert(error.message);
-        console.log("Error deleting garbage: ", error);
+        toast.error("Failed to delete WMA: " + error.message, {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   const fetchAllWMAs = async () => {
     try {
+      setLoading(true);
       const res = await AuthService.getAllWmas();
 
       const wmasWithCollectorCounts = await Promise.all(
         res.map(async (wma) => {
+          try {
           const collectors = await getAllCollectorsInWma(wma._id);
           return {
             ...wma,
             collectorCount: collectors.length,
           };
+          } catch (error) {
+            return {
+              ...wma,
+              collectorCount: 0,
+            };
+          }
         })
       );
       setWMAs(wmasWithCollectorCounts);
     } catch (error) {
-      alert(error.message);
-      console.error("Error fetching WMAs: ", error.message);
+      toast.error("Failed to fetch WMAs: " + error.message, {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,6 +92,10 @@ function AdminWMAs() {
     return wmas.length;
   };
 
+  const getTotalCollectors = () => {
+    return wmas.reduce((total, wma) => total + wma.collectorCount, 0);
+  };
+
   const findWMAWithHighestCollectors = () => {
     if (wmas.length === 0) return "N/A";
     const wmaWithHighestCollectors = wmas.reduce((maxWMA, currentWMA) =>
@@ -101,182 +104,406 @@ function AdminWMAs() {
     return wmaWithHighestCollectors.wmaname;
   };
 
-  const downloadPDF = (wmaData) => {
+  const downloadPDF = () => {
     const doc = new jsPDF();
-    const imgLogo = new Image();
-    imgLogo.src = "../src/assets/logo.png";
 
-    console.log("Image path: ", imgLogo.src);
-    imgLogo.onload = () => {
-      doc.addImage(imgLogo, "PNG", 14, 10, 55, 15);
+    // Header
       doc.setFont("helvetica", "bold");
-      doc.setTextColor("48752c");
-      doc.setFontSize(16);
-      doc.text("CleanPath Waste Management System", 95, 18);
+    doc.setTextColor("59", "130", "246");
+    doc.setFontSize(20);
+    doc.text("ZeroBin Admin Portal", 14, 20);
 
       doc.setFont("helvetica", "normal");
-      doc.setTextColor("000000");
-      doc.setFontSize(18);
-      doc.text("WMA Management Report", 14, 40);
+    doc.setTextColor("0", "0", "0");
+    doc.setFontSize(16);
+    doc.text("WMA Management Report", 14, 35);
 
       doc.setFontSize(11);
       doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 45);
+    doc.text(`Total WMAs: ${calculateTotalWMAs()}`, 14, 55);
+    doc.text(`Total Collectors: ${getTotalCollectors()}`, 14, 65);
 
-      doc.text(`Generated Date: ${new Date().toLocaleString()}`, 14, 48);
+    // Table data
+    const tableData = filteredWMAs.map((wma) => [
+      wma.wmaname,
+      wma.email,
+      wma.authNumber,
+      wma.collectorCount.toString(),
+      wma.address || "N/A",
+      wma.contact || "N/A",
+    ]);
 
       autoTable(doc, {
-        startY: 58,
-        head: [["Summary", ""]],
-        body: [["Total Accounts Registered", wmaData.totalWMAs]],
+      startY: 75,
+      head: [["WMA Name", "Email", "Auth Number", "Collectors", "Address", "Contact"]],
+      body: tableData,
         theme: "grid",
-      });
-
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(
-          `Page ${i} of ${pageCount}`,
-          doc.internal.pageSize.getWidth() - 20,
-          doc.internal.pageSize.getHeight() - 10
-        );
-        doc.text(
-          "CleanPath Waste Management System - Confidential",
-          14,
-          doc.internal.pageSize.getHeight() - 10
-        );
-      }
+      headStyles: { fillColor: [59, 130, 246] },
+    });
 
       const generatedDate = new Date().toLocaleDateString().replace(/\//g, "-");
-      doc.save(`WMA_Management_Report_${generatedDate}.pdf`);
-      toast.success("Report Generated Successfully!", {
+    doc.save(`WMA_Report_${generatedDate}.pdf`);
+    toast.success("Report generated successfully!", {
         position: "bottom-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
       });
     };
-  };
+
+  const metrics = [
+    {
+      title: "Total WMAs",
+      value: calculateTotalWMAs(),
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      ),
+      gradient: "from-blue-900 to-blue-800",
+      bgGradient: "from-blue-50 to-indigo-50",
+    },
+    {
+      title: "Total Collectors",
+      value: getTotalCollectors(),
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
+      gradient: "from-emerald-600 to-teal-600",
+      bgGradient: "from-emerald-50 to-teal-50",
+    },
+    {
+      title: "Top Performer",
+      value: findWMAWithHighestCollectors(),
+      icon: (
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+        </svg>
+      ),
+      gradient: "from-purple-600 to-indigo-600",
+      bgGradient: "from-purple-50 to-indigo-50",
+      isText: true,
+    },
+  ];
 
   return (
-    <div>
       <AdminDrawer>
-        <h1 className="m-5 text-2xl font-semibold text-green-900">
-          Waste Management Authority Management
+      <div className="p-6 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 min-h-screen">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-900 to-indigo-800 bg-clip-text text-transparent mb-2">
+            WMA Management
         </h1>
-        <div className="m-5 flex justify-between mb-4 text-center">
-          <div className="bg-white rounded w-[30%] p-4 flex flex-col justify-center shadow-xl">
-            <h1>Total Waste Management Authorities</h1>
-            <h1 className="text-[28px] font-semibold text-[#48752c]">
-              {calculateTotalWMAs()}
-            </h1>
+          <p className="text-gray-600">Manage Waste Management Authorities and their operations</p>
           </div>
-          <div className="bg-white rounded w-[30%] p-4 flex flex-col justify-center shadow-xl">
-            <h1>Maximum Collectors Registered By:</h1>
-            <h1 className="text-[24px] font-semibold text-[#48752c]">
-              {findWMAWithHighestCollectors()}
-            </h1>
+
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {metrics.map((metric, index) => (
+            <MetricCard key={index} {...metric} />
+          ))}
           </div>
-          <div
-            className="bg-[#48752c] cursor-pointer shadow-xl text-white hover:text-[#f9da78] rounded w-[30%] p-4 flex flex-col justify-center"
-            onClick={() =>
-              downloadPDF({
-                totalWMAs: calculateTotalWMAs(),
-              })
-            }
-          >
-            <h1>Click to Download WMA Report</h1>
-          </div>
-        </div>
-        <div className="m-5">
+
+        {/* Actions Bar */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex-1">
           <input
             type="text"
-            placeholder="Search by Authority Name"
+                placeholder="Search by WMA name, email, or authorization number..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="p-2 border border-gray-300 rounded w-full"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
         </div>
-        <table className="w-[96%] m-5 shadow-xl text-sm text-left rtl:text-right text-gray-500">
-          <caption className="p-5 shadow-xl text-lg font-semibold text-left rtl:text-right text-[#48752c] bg-gray-50">
-            Waste Management Authority Account Holders
-          </caption>
-          <thead className="text-center text-xs text-gray-700 uppercase bg-gray-50">
-            <tr>
-              <th className="px-4 py-3"></th>
-              <th className="px-4 py-3">WMAname</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Authorization No.</th>
-              <th className="px-4 py-3">Collectors Count</th>
-              <th className="px-4 py-3">Address</th>
-              <th className="px-4 py-3">Contact</th>
-              <th className="px-4 py-3"></th>
+            <button
+              onClick={downloadPDF}
+              className="px-6 py-3 bg-gradient-to-r from-blue-900 to-indigo-800 text-white rounded-xl font-semibold hover:from-blue-800 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download Report
+            </button>
+          </div>
+
+          {/* Active Filters */}
+          {searchTerm && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                Search: "{searchTerm}"
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="ml-2 hover:text-blue-600"
+                >
+                  ×
+                </button>
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* WMAs Table */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Registered WMAs ({filteredWMAs.length})
+            </h3>
+          </div>
+          
+          {/* Desktop Table View - Hidden on mobile */}
+          <div className="hidden lg:block">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">WMA</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">Contact Info</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">Auth Number</th>
+                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">Collectors</th>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">Location</th>
+                  <th className="px-4 py-4 text-center text-sm font-semibold text-gray-700">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-center shadow-xl">
-            {filteredWMAs.length > 0 ? (
+              <tbody className="divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="ml-2 text-gray-500">Loading WMAs...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredWMAs.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                      No WMAs found matching your criteria
+                    </td>
+                  </tr>
+                ) : (
               filteredWMAs.map((wma) => (
-                <tr className="bg-white border-b" key={wma._id}>
-                  <td className="px-3">
-                    <img
-                      src={wma?.profileImage || wmaimage}
-                      alt="Profile Picture"
-                      className="w-[30px] h-[30px] rounded-full"
-                    />
+                    <tr key={wma._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            {wma.profileImage ? (
+                              <img
+                                src={wma.profileImage}
+                                alt="Profile"
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-white font-semibold">
+                                {wma.wmaname?.charAt(0)?.toUpperCase() || 'W'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{wma.wmaname}</p>
+                            <p className="text-xs text-gray-500">ID: {wma._id.slice(-6)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="space-y-1">
+                          <p className="text-sm text-gray-900 truncate max-w-[200px]" title={wma.email}>
+                            {wma.email}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {wma.contact || "No contact"}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 whitespace-nowrap">
+                          {wma.authNumber}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <div className="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-full bg-emerald-100">
+                          <span className="text-base font-bold text-emerald-700">{wma.collectorCount}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-sm text-gray-600 truncate max-w-[180px]" title={wma.address || "Not provided"}>
+                          {wma.address || "Not provided"}
+                        </p>
                   </td>
-                  <th className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
-                    {wma.wmaname}
-                  </th>
-                  <td className="px-4 py-4">{wma.email}</td>
-                  <td className="px-4 py-4">{wma.authNumber}</td>
-                  <td className="px-4 py-4">{wma.collectorCount}</td>
-                  <td className="px-4 py-4">{wma.address}</td>
-                  <td className="px-4 py-4">{wma.contact}</td>
-                  <td className="px-3 py-4 text-right">
-                    <a
-                      onClick={() => handleClickOpen(wma._id)}
-                      className="font-medium text-red-600 cursor-pointer"
-                    >
-                      <DeleteIcon />
-                    </a>
+                      <td className="px-4 py-4 text-center">
+                        <button
+                          onClick={() => handleDeleteClick(wma._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete WMA"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                   </td>
                 </tr>
               ))
-            ) : (
-              <div className="w-full text-md text-gray-600 font-semibold m-10 text-center">
-                No registered wma found!
-              </div>
             )}
           </tbody>
         </table>
-        <Dialog
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title">{"Are you sure?"}</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-              The selected WMA account will be deleted and cannot be retrieved.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button onClick={handleDeleteWMA} color="error" autoFocus>
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-        <ToastContainer />
+          </div>
+
+          {/* Mobile Card View - Visible on mobile/tablet */}
+          <div className="lg:hidden divide-y divide-gray-200">
+            {loading ? (
+              <div className="px-6 py-12 text-center">
+                <div className="flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-gray-500">Loading WMAs...</span>
+                </div>
+              </div>
+            ) : filteredWMAs.length === 0 ? (
+              <div className="px-6 py-12 text-center text-gray-500">
+                No WMAs found matching your criteria
+              </div>
+            ) : (
+              filteredWMAs.map((wma) => (
+                <div key={wma._id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      {wma.profileImage ? (
+                        <img
+                          src={wma.profileImage}
+                          alt="Profile"
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white font-semibold text-lg">
+                          {wma.wmaname?.charAt(0)?.toUpperCase() || 'W'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-900 mb-1">{wma.wmaname}</h4>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {wma.authNumber}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteClick(wma._id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                      title="Delete WMA"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-gray-600 break-all">{wma.email}</span>
+                    </div>
+                    
+                    {wma.contact && (
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <span className="text-gray-600">{wma.contact}</span>
+                      </div>
+                    )}
+                    
+                    {wma.address && (
+                      <div className="flex items-start gap-2">
+                        <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-gray-600">{wma.address}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                      <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      <span className="font-semibold text-emerald-700">{wma.collectorCount} Collectors</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {deleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this WMA account? This action cannot be undone and will affect all associated collectors.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteWMA}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete WMA"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ToastContainer
+          position="bottom-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+      </div>
       </AdminDrawer>
-    </div>
   );
 }
+
+const MetricCard = ({ title, value, icon, gradient, bgGradient, isText = false }) => (
+  <div className={`bg-gradient-to-br ${bgGradient} p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50`}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">{title}</p>
+        {isText ? (
+          <p className="text-lg font-bold text-gray-800 truncate max-w-[120px]" title={value}>
+            {value}
+          </p>
+        ) : (
+          <p className={`text-4xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
+        )}
+      </div>
+      <div className={`p-4 rounded-xl bg-gradient-to-r ${gradient} shadow-lg`}>
+        {icon}
+      </div>
+    </div>
+  </div>
+);
 
 export default AdminWMAs;

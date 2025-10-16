@@ -8,8 +8,8 @@ const WasteManagementStats = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Title */}
         <div className="md:col-span-1">
-          <h2 className="text-4xl font-semibold text-gray-900">
-            Impressive waste management metrics driving sustainability.
+          <h2 className="text-4xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            Driving sustainability through technology and innovation.
           </h2>
         </div>
 
@@ -20,7 +20,7 @@ const WasteManagementStats = () => {
             <div className="flex items-center space-x-2">
               <span className="text-5xl font-bold text-gray-900">92%</span>
               <svg
-                className="w-6 h-6 text-green-500"
+                className="w-6 h-6 text-emerald-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -34,11 +34,10 @@ const WasteManagementStats = () => {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Waste recycling rate
+              User satisfaction rate
             </h3>
             <p className="text-gray-500">
-              Successfully processed and recycled materials from total waste
-              collected.
+              Residents and businesses highly rate our platform for ease of use and reliability.
             </p>
           </div>
 
@@ -47,7 +46,7 @@ const WasteManagementStats = () => {
             <div className="flex items-center space-x-2">
               <span className="text-5xl font-bold text-gray-900">95%</span>
               <svg
-                className="w-6 h-6 text-green-500"
+                className="w-6 h-6 text-emerald-500"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -61,11 +60,10 @@ const WasteManagementStats = () => {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Collection efficiency
+              On-time collection rate
             </h3>
             <p className="text-gray-500">
-              On-time pickup and efficient waste collection across service
-              areas.
+              Scheduled pickups completed on time with real-time tracking and notifications.
             </p>
           </div>
         </div>
@@ -83,7 +81,7 @@ const WasteManagementStats = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute text-white -top-2 -right-2 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+            <div className="absolute text-white -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
               <span className="text-[45px]">"</span>
             </div>
           </div>
@@ -93,15 +91,12 @@ const WasteManagementStats = () => {
             <div className="flex justify-between items-start">
               <div className="space-y-1 flex">
                 <p className="text-gray-600 text-lg mb-4 w-[70%]">
-                  The implementation of this waste management system has
-                  transformed our community's approach to recycling. The
-                  efficient collection and sorting processes have made
-                  sustainable practices easier than ever.
+                  ZeroBin has completely revolutionized how we manage waste collection in our municipality. The real-time tracking and transparent pricing have increased accountability and made our operations significantly more efficient.
                 </p>
                 <div className="border-l border-gray-200 m-4"></div>
                 <div className="flex flex-col justify-items-center justify-center">
-                  <h3 className="font-semibold text-gray-900">Sarah Chen</h3>
-                  <p className="text-gray-500">Environmental Coordinator</p>
+                  <h3 className="font-semibold text-gray-900">Michael Rodriguez</h3>
+                  <p className="text-gray-500">Municipal Operations Director</p>
                 </div>
               </div>
 
