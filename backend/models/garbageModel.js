@@ -39,6 +39,11 @@ const garbageSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    lastCollectionCharge: {
+      type: Number,
+      default: 0,
+      min: [0, "Charge cannot be negative"],
+    },
     status: {
       type: String,
       enum: ["Pending", "Collected", "In Progress", "Cancelled"],

@@ -2,6 +2,11 @@ import Garbage from "../models/garbageModel.js";
 import Collector from "../models/collectorModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import User from "../models/userModel.js";
+import pricingConfig from "../config/pricingConfig.js";
+import PayAsYouThrowPricingService from "../services/pricing/PayAsYouThrowPricingService.js";
+
+// Dependency inversion: depend on abstraction-compatible service
+const pricingService = new PayAsYouThrowPricingService(pricingConfig);
 
 // ============ BIN REGISTRATION ENDPOINTS ============
 
@@ -281,13 +286,33 @@ const markBinCollected = asyncHandler(async (req, res) => {
     throw new Error("You are not assigned to this area");
   }
 
+  // NEW: PAYT computation (additive, backward compatible)
+  const rawWeightKg = req.body.weightKg ?? req.body.weight;
+  if (rawWeightKg !== undefined) {
+    const weightKg = Number(rawWeightKg);
+    if (!Number.isFinite(weightKg) || weightKg <= 0) {
+      res.status(400);
+      throw new Error("weightKg must be a positive number");
+    }
+
+    await bin.populate("area", "name basePerKgRate");
+
+    // Use bin.type ("Recyclable" | "Non-Recyclable")
+    const quote = pricingService.computeCharge(bin.area, weightKg, bin.type);
+    bin.weight = weightKg; // will be same as existing 'weight' if provided
+    bin.lastCollectionCharge = quote.amount;
+
+    // Attach to response (additive)
+    req._paytQuote = quote;
+  }
+
   // Update bin status
   bin.status = "Collected";
   bin.collectionDate = new Date();
   bin.assignedCollector = collector._id;
   bin.assignedWma = collector.wmaId;
 
-  // Update weight if provided
+  // Existing optional weight handling remains
   if (weight && weight > 0) {
     bin.weight = weight;
   }
@@ -306,6 +331,8 @@ const markBinCollected = asyncHandler(async (req, res) => {
     success: true,
     message: "Bin collected successfully! Sensor reset to Empty.",
     bin: updatedBin,
+    // Return computed charge if available
+    charge: req._paytQuote || undefined,
   });
 });
 

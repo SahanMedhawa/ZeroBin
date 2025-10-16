@@ -19,6 +19,7 @@ import scheduleRoutes from "./routes/scheduleRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import areaRoutes from "./routes/areaRoutes.js"; // Import areaRoutes
 import grievanceRoutes from "./routes/grievanceRoutes.js"; // Import grievanceRoutes
+import pricingRoutes from "./routes/pricingRoutes.js"; // Import pricingRoutes
 // Removed: Smart Device routes - replaced by Smart Bin system (one bin per user)
 // import smartDeviceRoutes from "./routes/smartDeviceRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js"; // Import contactRoutes
@@ -92,6 +93,9 @@ app.use("/api/grievances", grievanceRoutes);
 
 // Contact Route
 app.use("/api/contacts", contactRoutes);
+
+// Pricing Route
+app.use("/api/pricing", pricingRoutes);
 
 app.listen(port, () => console.log(`Server running on port: ${port}`));
 

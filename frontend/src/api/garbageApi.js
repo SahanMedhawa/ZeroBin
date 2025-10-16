@@ -186,6 +186,17 @@ const deleteGarbage = async (id) => {
   }
 };
 
+/**
+ * Get PAYT quote
+ * @param {{areaId:string, materialType:"Recyclable"|"Non-Recyclable", weightKg:number}} params
+ */
+export const getPricingQuote = async ({ areaId, materialType, weightKg }) => {
+  const res = await ApiHelper.get("/pricing/quote", {
+    params: { areaId, materialType, weightKg },
+  });
+  return res.data;
+};
+
 export {
   // New Bin Registration & Sensor Management
   registerBin,

@@ -28,6 +28,12 @@ const areaSchema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    basePerKgRate: { // kg rate for that area
+      type: Number,
+      required: true,
+      min: [0, "Base per-kg rate cannot be negative"],
+      default: 0,
+    },
   },
   { timestamps: true }
 );
