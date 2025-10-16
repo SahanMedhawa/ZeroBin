@@ -302,7 +302,7 @@ const updateGrievanceStatus = asyncHandler(async (req, res) => {
   }
   if (!VALID_STATUSES.includes(status)) {
     res.status(400);
-    throw new Error("Invalid status. Must be: " + validStatuses.join(", "));
+    throw new Error("Invalid status. Must be: " + VALID_STATUSES.join(", "));
   }
 
   const grievance = await Grievance.findById(req.params.id);

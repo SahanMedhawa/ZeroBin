@@ -53,6 +53,11 @@ router.get("/user/my-grievances", authenticate, getUserGrievances);
 // Add a note to user's own grievance
 router.post("/:id/user-note", authenticate, addUserNote);
 
+// Lightweight API docs route placed before parameterized routes to avoid shadowing by "/:id"
+router.get("/docs", (req, res) => {
+  return res.json({ title: "Grievance Management API" });
+});
+
 // ============ ADMIN ROUTES (Admin Authentication Required) ============
 
 /**
