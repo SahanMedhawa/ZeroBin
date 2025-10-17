@@ -191,10 +191,18 @@ const deleteGarbage = async (id) => {
  * @param {{areaId:string, materialType:"Recyclable"|"Non-Recyclable", weightKg:number}} params
  */
 export const getPricingQuote = async ({ areaId, materialType, weightKg }) => {
-  const res = await ApiHelper.get("/pricing/quote", {
-    params: { areaId, materialType, weightKg },
-  });
-  return res.data;
+  try {
+    // FIX: pass plain queryParams (ApiHelper adds `params:` internally)
+    const response = await new API().get("pricing/quote", {
+      areaId,
+      materialType,
+      weightKg,
+    });
+    return response; // { success, amount, currency, basePerKgRate, multiplier }
+  } catch (error) {
+    console.error("Error fetching PAYT quote:", error.message);
+    throw error;
+  }
 };
 
 export {
