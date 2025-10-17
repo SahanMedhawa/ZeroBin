@@ -1,5 +1,22 @@
 import mongoose from "mongoose";
 
+// ============ CONSTANTS ============
+
+/**
+ * Valid contact status values
+ */
+const CONTACT_STATUSES = {
+  NEW: "new",
+  READ: "read",
+  RESPONDED: "responded"
+};
+
+/**
+ * Email validation regex pattern
+ * Validates standard email format
+ */
+const EMAIL_REGEX = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+
 const contactSchema = new mongoose.Schema(
   {
     name: {
@@ -13,7 +30,7 @@ const contactSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        EMAIL_REGEX,
         "Please provide a valid email",
       ],
     },
@@ -32,8 +49,8 @@ const contactSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["new", "read", "responded"],
-      default: "new",
+      enum: Object.values(CONTACT_STATUSES),
+      default: CONTACT_STATUSES.NEW,
     },
   },
   {
@@ -42,3 +59,4 @@ const contactSchema = new mongoose.Schema(
 );
 
 export default mongoose.model("Contact", contactSchema);
+export { CONTACT_STATUSES };
