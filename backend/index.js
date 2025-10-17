@@ -12,7 +12,7 @@ import connectDB from "./config/db.js";
 import configurePassport from "./config/passport.js";
 import userRoutes from "./routes/userRoutes.js";
 
-import collectorRoutes from "./routes/collectorRoutes.js"
+import collectorRoutes from "./routes/collectorRoutes.js";
 import wmaRoutes from "./routes/wmaRoutes.js";
 import garbageRoutes from "./routes/garbageRoutes.js"; // fixed typo in garbageRoutes
 import scheduleRoutes from "./routes/scheduleRoutes.js";
@@ -44,16 +44,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Initialize Passport
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-session-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "your-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
 app.use(passport.initialize());
 app.use(passport.session());
 configurePassport();
