@@ -1,6 +1,12 @@
 import React, { useState } from "react";
-import WmaAuthService from "../../../api/wmaApi";
 import { Link, useNavigate } from "react-router-dom";
+// Import from default (singleton) - no changes needed for existing code
+import WmaAuthService from "../../../api/wmaApi";
+
+// For components that need custom service (e.g., testing):
+// import { WmaAuthService } from "../../../api/wmaApi";
+// import WmaServiceFactory from "../../../api/factories/WmaServiceFactory";
+// const wmaService = WmaServiceFactory.createDefault();
 
 const WMALogin = () => {
   const [email, setEmail] = useState("");
@@ -13,6 +19,7 @@ const WMALogin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      // Still works with default singleton
       const response = await WmaAuthService.wmaLogin({ email, password });
       console.log("Login successful", response);
       navigate("/wma/dashboard");
@@ -20,11 +27,16 @@ const WMALogin = () => {
       setError(error.message);
     }
   };
+
+  // ...existing code...
   return (
     <div>
       <form className="space-y-5" onSubmit={handleLogin}>
         <div>
-          <label htmlFor="wma-email" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="wma-email"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Email Address
           </label>
           <input
@@ -39,7 +51,10 @@ const WMALogin = () => {
           />
         </div>
         <div>
-          <label htmlFor="wma-password" className="block text-sm font-medium text-gray-700 mb-2">
+          <label
+            htmlFor="wma-password"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
             Password
           </label>
           <input
@@ -66,7 +81,10 @@ const WMALogin = () => {
         )}
         <p className="text-center text-sm text-gray-600 mt-6">
           Don't have an account?{" "}
-          <Link to="/register" className="font-semibold text-emerald-600 hover:text-emerald-700">
+          <Link
+            to="/register"
+            className="font-semibold text-emerald-600 hover:text-emerald-700"
+          >
             Sign up
           </Link>
         </p>

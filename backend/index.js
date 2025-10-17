@@ -22,6 +22,7 @@ import grievanceRoutes from "./routes/grievanceRoutes.js"; // Import grievanceRo
 // Removed: Smart Device routes - replaced by Smart Bin system (one bin per user)
 // import smartDeviceRoutes from "./routes/smartDeviceRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js"; // Import contactRoutes
+import wmaDashboardRoutes from "./routes/wmaDashboardRoutes.js";
 
 dotenv.config();
 const port = process.env.PORT || 5000;
@@ -94,9 +95,10 @@ app.use("/api/grievances", grievanceRoutes);
 
 // Contact Route
 app.use("/api/contacts", contactRoutes);
+app.use("/api/wmas/dashboard", wmaDashboardRoutes);
 
 // Only start the server if not in test mode
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== "test") {
   app.listen(port, () => console.log(`Server running on port: ${port}`));
 }
 

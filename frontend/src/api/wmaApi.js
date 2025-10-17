@@ -1,14 +1,31 @@
-import ApiHelper from "../helpers/apiHelper";
+import IWmaApiService from "./abstractions/IWmaApiService";
+import ApiHelperAdapter from "./adapters/ApiHelperAdapter";
 
-class WmaAuthService {
-  constructor() {
-    this.api = new ApiHelper();
+/**
+ * WmaAuthService
+ * Concrete implementation of IWmaApiService
+ *
+ * Demonstrates Dependency Inversion Principle:
+ * - Depends on IHttpClient abstraction, not concrete ApiHelper
+ * - Can be injected with any IHttpClient implementation
+ * - Implements IWmaApiService interface
+ *
+ * @extends IWmaApiService
+ */
+class WmaAuthService extends IWmaApiService {
+  /**
+   * Constructor with Dependency Injection
+   * @param {IHttpClient} httpClient - HTTP client implementation (optional)
+   */
+  constructor(httpClient = null) {
+    super();
+    // Dependency Injection: Accept abstraction, not concrete class
+    this.httpClient = httpClient || new ApiHelperAdapter();
   }
 
   async wmaRegister(wmaData) {
     try {
-      const response = await this.api.post("wmas", wmaData);
-      // Assuming the backend returns a token upon successful registration
+      const response = await this.httpClient.post("wmas", wmaData);
       if (response.token) {
         localStorage.setItem("token", response.token);
       }
@@ -21,8 +38,7 @@ class WmaAuthService {
 
   async wmaLogin(credentials) {
     try {
-      const response = await this.api.post("wmas/auth", credentials);
-      // Assuming the backend returns a token upon successful login
+      const response = await this.httpClient.post("wmas/auth", credentials);
       if (response.token) {
         localStorage.setItem("token", response.token);
         localStorage.setItem("wmaId", response._id);
@@ -36,30 +52,21 @@ class WmaAuthService {
 
   async getCurrentWmaDetails() {
     try {
-      const response = await this.api.get(
-        "wmas/wmaprofile", // Assuming 'me' is the endpoint for fetching the current user profile
-        {
-          withCredentials: true, // Ensure cookies are sent with the request
-        }
-      );
-
-      // console.log(`Current User response => `, response); // Log the response data
-      return response; // Return the response data
+      const response = await this.httpClient.get("wmas/wmaprofile", {
+        withCredentials: true,
+      });
+      return response;
     } catch (error) {
       console.error("Error fetching current wma profile:", error);
-      throw error; // Rethrow error for further handling
+      throw error;
     }
   }
 
   async getAllWmas() {
     try {
-      const wmas = await this.api.get(
-        "wmas",
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      const wmas = await this.httpClient.get("wmas", {
+        withCredentials: true,
+      });
       return wmas;
     } catch (error) {
       console.error("Error fetching wmas:", error.message);
@@ -69,7 +76,7 @@ class WmaAuthService {
 
   async deleteWma(id) {
     try {
-      const deletedWma = await this.api.delete(`wmas/${id}`);
+      const deletedWma = await this.httpClient.delete(`wmas/${id}`);
       return deletedWma.data;
     } catch (error) {
       console.error("Error deleting wma:", error.message);
@@ -78,11 +85,14 @@ class WmaAuthService {
   }
 
   async updateWma(wmaProfileData) {
-    console.log(wmaProfileData);
     try {
-      const response = await this.api.put("wmas/wmaprofile", wmaProfileData, {
-        withCredentials: true,
-      });
+      const response = await this.httpClient.put(
+        "wmas/wmaprofile",
+        wmaProfileData,
+        {
+          withCredentials: true,
+        }
+      );
       return response.data;
     } catch (error) {
       console.error("Error updating wma profile:", error);
@@ -92,8 +102,7 @@ class WmaAuthService {
 
   async logoutCurrentWma() {
     try {
-      const response = await this.api.post("wmas/logout");
-     
+      await this.httpClient.post("wmas/logout");
     } catch (error) {
       console.error("Error logging out:", error);
     }
@@ -103,7 +112,6 @@ class WmaAuthService {
     localStorage.removeItem("token");
     localStorage.removeItem("wmaId");
     localStorage.removeItem("userInfo");
-    // You might want to perform additional cleanup here
   }
 
   isAuthenticatedWma() {
@@ -118,13 +126,9 @@ class WmaAuthService {
     return localStorage.getItem("wmaId");
   }
 
-  /**
-   * Get WMA's serviced areas
-   * @returns {Promise<Array>} List of serviced areas
-   */
   async getWMAServiceAreas() {
     try {
-      const response = await this.api.get("wmas/service-areas", {
+      const response = await this.httpClient.get("wmas/service-areas", {
         withCredentials: true,
       });
       return response;
@@ -134,14 +138,9 @@ class WmaAuthService {
     }
   }
 
-  /**
-   * Add an area to WMA's service areas
-   * @param {string} areaId - The ID of the area to add
-   * @returns {Promise<Object>} Updated service areas
-   */
   async addServiceArea(areaId) {
     try {
-      const response = await this.api.post(
+      const response = await this.httpClient.post(
         `wmas/service-areas/${areaId}`,
         {},
         {
@@ -155,14 +154,11 @@ class WmaAuthService {
     }
   }
 
-  /**
-   * Remove an area from WMA's service areas
-   * @param {string} areaId - The ID of the area to remove
-   * @returns {Promise<Object>} Updated service areas
-   */
   async removeServiceArea(areaId) {
     try {
-      const response = await this.api.delete(`wmas/service-areas/${areaId}`);
+      const response = await this.httpClient.delete(
+        `wmas/service-areas/${areaId}`
+      );
       return response;
     } catch (error) {
       console.error("Error removing service area:", error);
@@ -171,4 +167,8 @@ class WmaAuthService {
   }
 }
 
+// Export singleton instance with default adapter
 export default new WmaAuthService();
+
+// Also export class for dependency injection
+export { WmaAuthService };
