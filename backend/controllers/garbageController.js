@@ -4,9 +4,11 @@ import asyncHandler from "../middlewares/asyncHandler.js";
 import User from "../models/userModel.js";
 import pricingConfig from "../config/pricingConfig.js";
 import PayAsYouThrowPricingService from "../services/pricing/PayAsYouThrowPricingService.js";
+import TransactionService from "../services/finance/TransactionService.js";
 
 // Dependency inversion: depend on abstraction-compatible service
 const pricingService = new PayAsYouThrowPricingService(pricingConfig);
+const transactionService = new TransactionService({ currency: "LKR", scale: 2 });
 
 // ============ BIN REGISTRATION ENDPOINTS ============
 
@@ -298,12 +300,23 @@ const markBinCollected = asyncHandler(async (req, res) => {
     await bin.populate("area", "name basePerKgRate");
 
     // Use bin.type ("Recyclable" | "Non-Recyclable")
-    const quote = pricingService.computeCharge(bin.area, weightKg, bin.type);
-    bin.weight = weightKg; // will be same as existing 'weight' if provided
+    const quote = pricingService.computeCharge(bin.area, Number(weightKg), bin.type);
+
+    bin.weight = Number(weightKg);
     bin.lastCollectionCharge = quote.amount;
 
-    // Attach to response (additive)
-    req._paytQuote = quote;
+    // Optional: auto-create unpaid transaction (feature-flag)
+    if (String(process.env.PAYT_AUTO_TX || "false").toLowerCase() === "true") {
+      try {
+        await transactionService.createFromPAYT({
+          userId: bin.user,
+          bin,
+          quote,
+        });
+      } catch (e) {
+        console.error("Failed to auto-create PAYT transaction:", e.message);
+      }
+    }
   }
 
   // Update bin status

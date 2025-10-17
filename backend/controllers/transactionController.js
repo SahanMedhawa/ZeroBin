@@ -1,6 +1,10 @@
 import Transaction from "../models/transactionModel.js";
 import asyncHandler from "../middlewares/asyncHandler.js";
 import User from "../models/userModel.js";
+import TransactionService from "../services/finance/TransactionService.js";
+
+// DIP: depend on service abstraction (concrete injected here)
+const transactionService = new TransactionService({ currency: "LKR", scale: 2 });
 
 // @desc    Create a new transaction
 // @route   POST /api/transactions
@@ -22,33 +26,19 @@ import User from "../models/userModel.js";
  * @returns {Promise<void>} - Returns a promise that resolves to void.
  */
 const createTransaction = asyncHandler(async (req, res) => {
-  const { userID, description, isRefund, isPaid, amount } = req.body;
+  // Accept both userID (preferred) and user for compatibility
+  const userId = req.body.userID || req.body.user;
+  const { description, isRefund = false, isPaid = false, amount } = req.body;
 
-  // console.log(`userID => `, req.body);
-  // Find the user
-  const user = await User.findById(userID);
-
-  if (!user) {
-    res.status(404);
-    throw new Error("User not found.");
-  }
-
-  const transaction = new Transaction({
-    user: userID,
+  const dto = await transactionService.createManual({
+    userId,
     description,
+    amount,
     isPaid,
     isRefund,
-    amount,
   });
 
-  try {
-    // console.log(`transaction => `, transaction);
-    const createdTransaction = await transaction.save();
-    res.status(201).json(createdTransaction);
-  } catch (error) {
-    res.status(400);
-    throw new Error("Transaction creation failed.");
-  }
+  res.status(201).json(dto);
 });
 
 /**
@@ -61,11 +51,13 @@ const createTransaction = asyncHandler(async (req, res) => {
  * @returns {Promise<void>} - Returns a JSON response with the list of transactions.
  */
 const getAllTransactions = asyncHandler(async (req, res) => {
+  // Get all transactions (admin) — map to DTO for consistency
   const transactions = await Transaction.find({})
-    .populate("user", "name email") // Populate user details
+    .populate("user", "name email")
     .sort({ createdAt: -1 });
 
-  res.status(200).json(transactions);
+  const dtos = transactions.map((t) => transactionService.toDTO(t));
+  res.status(200).json(dtos);
 });
 
 /**
@@ -83,16 +75,12 @@ const getAllTransactions = asyncHandler(async (req, res) => {
  * @returns {Promise<void>} - A promise that resolves when the response is sent.
  */
 const getTransactionById = asyncHandler(async (req, res) => {
-  const transaction = await Transaction.findById(req.params.id).populate(
-    "user",
-    "name email"
-  );
-
+  // Get a transaction by ID — map to DTO
+  const transaction = await Transaction.findById(req.params.id).populate("user", "name email");
   if (transaction) {
-    res.status(200).json(transaction);
-  } else {
-    res.status(404).json({ message: "Transaction not found" });
+    return res.status(200).json(transactionService.toDTO(transaction));
   }
+  res.status(404).json({ message: "Transaction not found" });
 });
 
 /**
@@ -108,15 +96,15 @@ const getTransactionById = asyncHandler(async (req, res) => {
  * @returns {Promise<void>} - A promise that resolves when the response is sent.
  */
 const getTransactionsByUser = asyncHandler(async (req, res) => {
+  // Get transactions for current user — map to DTO
   const transactions = await Transaction.find({ user: req.user._id })
     .populate("user", "username email")
     .sort({ createdAt: -1 });
 
   if (transactions.length > 0) {
-    res.status(200).json(transactions);
-  } else {
-    res.status(404).json({ message: "No transactions found for this user" });
+    return res.status(200).json(transactions.map((t) => transactionService.toDTO(t)));
   }
+  res.status(404).json({ message: "No transactions found for this user" });
 });
 
 /**
@@ -132,18 +120,15 @@ const getTransactionsByUser = asyncHandler(async (req, res) => {
  * @returns {Promise<void>} - A promise that resolves when the response is sent.
  */
 const getTransactionsByUserId = asyncHandler(async (req, res) => {
-  const userId = req.params.userId; // Get user ID from request parameters
-
-  // Fetch transactions by user ID
-  const transactions = await Transaction.find({ user: userId })
-    .populate("user", "username email") // Populate user details if needed
-    .sort({ createdAt: -1 }); // Sort transactions by createdAt in descending order
+  // Get transactions by userId (admin) — map to DTO
+  const transactions = await Transaction.find({ user: req.params.userId })
+    .populate("user", "username email")
+    .sort({ createdAt: -1 });
 
   if (transactions.length > 0) {
-    res.status(200).json(transactions);
-  } else {
-    res.status(404).json({ message: "No transactions found for this user" });
+    return res.status(200).json(transactions.map((t) => transactionService.toDTO(t)));
   }
+  res.status(404).json({ message: "No transactions found for this user" });
 });
 
 /**
@@ -164,24 +149,28 @@ const getTransactionsByUserId = asyncHandler(async (req, res) => {
  */
 const updateTransaction = asyncHandler(async (req, res) => {
   const { isPaid } = req.body;
+  const id = req.params.id;
 
-  const transaction = await Transaction.findById(req.params.id);
+  if (isPaid === true) {
+    const dto = await transactionService.markPaid(id, { note: "via user portal" });
+    return res.status(200).json(dto);
+  }
 
+  // fallback to minimal update when not marking as paid
+  const transaction = await Transaction.findById(id);
   if (transaction) {
     transaction.isPaid = isPaid !== undefined ? isPaid : transaction.isPaid;
-
-    const updatedTransaction = await transaction.save();
-    res.status(200).json(updatedTransaction);
-  } else {
-    res.status(404).json({ message: "Transaction not found" });
+    const updated = await transaction.save();
+    return res.status(200).json(transactionService.toDTO(updated));
   }
+  res.status(404).json({ message: "Transaction not found" });
 });
 
 export {
   createTransaction,
   getAllTransactions,
+  getTransactionById,
   getTransactionsByUser,
   getTransactionsByUserId,
-  getTransactionById,
   updateTransaction,
 };
