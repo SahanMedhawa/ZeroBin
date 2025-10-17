@@ -4,5 +4,5 @@ module.exports = {
   },
   extensionsToTreatAsEsm: [".jsx"],
   testEnvironment: "node",
-  setupFiles: ["<rootDir>/jest.setup.js"],
+  setupFilesAfterEnv: ["./backend/tests/setup.js"],
 };

@@ -17,8 +17,15 @@ import { generateToken, generateWMAToken } from "../utils/createToken.js";
  * @throws  {500} If a server error occurs
  */
 const createWMA = asyncHandler(async (req, res) => {
-  const { wmaname, address, contact, profileImage, authNumber, email, password } =
-    req.body;
+  const {
+    wmaname,
+    address,
+    contact,
+    profileImage,
+    authNumber,
+    email,
+    password,
+  } = req.body;
 
   // Check the body has necessary attributes
   if (!wmaname || !address || !contact || !authNumber || !email || !password) {
@@ -85,7 +92,10 @@ const loginWMA = asyncHandler(async (req, res) => {
 
   if (existingWMA) {
     // Compare the provided password with the hashed password in the database
-    const isPasswordValid = await bcrypt.compare(password, existingWMA.password);
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      existingWMA.password
+    );
 
     if (isPasswordValid) {
       // Generate token if the wma is valid
@@ -155,7 +165,7 @@ const getAllWMAs = asyncHandler(async (req, res) => {
  * @throws  {500} If a server error occurs
  */
 const getCurrentWMAProfile = asyncHandler(async (req, res) => {
-  const wma = await WMA.findById(req.wma._id).populate('servicedAreas');
+  const wma = await WMA.findById(req.wma._id).populate("servicedAreas");
   if (wma) {
     res.json({
       _id: wma._id,
@@ -241,7 +251,6 @@ const updateCurrentWMAProfile = asyncHandler(async (req, res) => {
     throw new Error("WMA not found!");
   }
 });
-
 
 /**
  * @route   DELETE /api/wmas/:id
@@ -338,8 +347,8 @@ const updateWMAById = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const getWMAServiceAreas = asyncHandler(async (req, res) => {
-  const wma = await WMA.findById(req.wma._id).populate('servicedAreas');
-  
+  const wma = await WMA.findById(req.wma._id).populate("servicedAreas");
+
   if (wma) {
     res.json(wma.servicedAreas || []);
   } else {
@@ -355,7 +364,7 @@ const getWMAServiceAreas = asyncHandler(async (req, res) => {
  */
 const addServiceArea = asyncHandler(async (req, res) => {
   const { areaId } = req.params;
-  
+
   const area = await Area.findById(areaId);
   if (!area) {
     res.status(404);
@@ -363,21 +372,23 @@ const addServiceArea = asyncHandler(async (req, res) => {
   }
 
   const wma = await WMA.findById(req.wma._id);
-  
+
   if (wma) {
     // Check if area is already in serviced areas
     if (wma.servicedAreas.includes(areaId)) {
       res.status(400);
       throw new Error("Area already in service areas!");
     }
-    
+
     wma.servicedAreas.push(areaId);
     await wma.save();
-    
-    const updatedWma = await WMA.findById(req.wma._id).populate('servicedAreas');
+
+    const updatedWma = await WMA.findById(req.wma._id).populate(
+      "servicedAreas"
+    );
     res.json({
       message: "Service area added successfully!",
-      servicedAreas: updatedWma.servicedAreas
+      servicedAreas: updatedWma.servicedAreas,
     });
   } else {
     res.status(404);
@@ -392,19 +403,21 @@ const addServiceArea = asyncHandler(async (req, res) => {
  */
 const removeServiceArea = asyncHandler(async (req, res) => {
   const { areaId } = req.params;
-  
+
   const wma = await WMA.findById(req.wma._id);
-  
+
   if (wma) {
     wma.servicedAreas = wma.servicedAreas.filter(
       (area) => area.toString() !== areaId
     );
     await wma.save();
-    
-    const updatedWma = await WMA.findById(req.wma._id).populate('servicedAreas');
+
+    const updatedWma = await WMA.findById(req.wma._id).populate(
+      "servicedAreas"
+    );
     res.json({
       message: "Service area removed successfully!",
-      servicedAreas: updatedWma.servicedAreas
+      servicedAreas: updatedWma.servicedAreas,
     });
   } else {
     res.status(404);
@@ -413,7 +426,7 @@ const removeServiceArea = asyncHandler(async (req, res) => {
 });
 
 export {
-    createWMA,
+  createWMA,
   loginWMA,
   logoutCurrentWMA,
   getAllWMAs,

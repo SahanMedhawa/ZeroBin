@@ -27,7 +27,9 @@ import wmaDashboardRoutes from "./routes/wmaDashboardRoutes.js";
 dotenv.config();
 const port = process.env.PORT || 5000;
 
-connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB();
+}
 
 const app = express();
 
