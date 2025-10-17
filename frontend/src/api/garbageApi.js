@@ -186,6 +186,23 @@ const deleteGarbage = async (id) => {
   }
 };
 
+/**
+ * Submit a maintenance ticket for a specific bin
+ * POST /api/garbage/:binId/ticket
+ */
+const submitBinTicket = async (binId, payload) => {
+  try {
+    const response = await new API().post(`garbage/${binId}/ticket`, payload);
+    if (!response?.success) {
+      throw new Error(response?.message || 'Failed to submit ticket');
+    }
+    return response;
+  } catch (error) {
+    console.error("Error submitting bin ticket:", error);
+    throw error;
+  }
+};
+
 export {
   // New Bin Registration & Sensor Management
   registerBin,
@@ -202,4 +219,6 @@ export {
   getAllDriverGarbages,
   updateGarbage,
   deleteGarbage,
+  // Submit ticket
+  submitBinTicket,
 };

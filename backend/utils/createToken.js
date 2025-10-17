@@ -32,8 +32,8 @@ export const generateWMAToken = (res, wmaId) => {
   return token;
 };
 
-export const generateCollectorToken = (res, collectorNIC) => {
-  const token = jwt.sign({ collectorNIC }, process.env.JWT_SECRET, {
+export const generateCollectorToken = (res, collectorId) => {
+  const token = jwt.sign({ collectorId }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 

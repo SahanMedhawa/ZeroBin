@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import WMADrawer from "../components/WMADrawer";
 import SliderComponent from "../components/Slider";
+import MaintenanceTickets from "../maintenance/MaintenanceTickets";
 import { DollarSign, TrendingUp, Trash } from "lucide-react";
 import { getAllCollectorsInWma} from "../../../api/collectorApi"
 import { getAllSchedulesInWma } from "../../../api/scheduleApi"; 
@@ -74,7 +75,22 @@ const WMADashboard = () => {
             <MetricCard key={index} {...metric} />
           ))}
         </div>
+        {/* top slider */}
         <SliderComponent />
+
+        {/* Maintenance Tickets and secondary column */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <div>
+            <MaintenanceTickets />
+          </div>
+
+          <div>
+            {/* placeholder for other widgets in the second column */}
+            <div className="mb-6">
+              <SliderComponent />
+            </div>
+          </div>
+        </div>
       </div>
     </WMADrawer>
   );

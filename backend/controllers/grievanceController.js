@@ -153,8 +153,10 @@ const getUserGrievances = asyncHandler(async (req, res) => {
 
   // Get grievances
   const grievances = await Grievance.find(query)
+    .populate("userId", "username email contact address")
     .populate("areaId", "name district")
     .populate("assignedTo", "collectorName truckNumber contactNo")
+    .populate("garbageId", "binId address latitude longitude status sensorData user area")
   .sort({ createdAt: -1 })
   .skip(skip)
   .limit(limitNum);
@@ -450,6 +452,20 @@ const getGrievancesByArea = asyncHandler(async (req, res) => {
   // Get grievances
   const grievances = await Grievance.getByArea(areaId, status);
 
+  // populate fields for the returned grievances
+  if (Array.isArray(grievances) && grievances.length > 0) {
+    await Promise.all(grievances.map(async (g) => {
+      try {
+        await g.populate("userId", "username email contact address");
+        await g.populate("areaId", "name district");
+        await g.populate("assignedTo", "collectorName truckNumber contactNo");
+        await g.populate("garbageId", "binId address latitude longitude status sensorData user area");
+      } catch (e) {
+        // ignore
+      }
+    }));
+  }
+
   // Get area-specific statistics
   const stats = await Grievance.getStatistics({ areaId });
 
@@ -544,6 +560,20 @@ const getAssignedGrievances = asyncHandler(async (req, res) => {
 
   // Get assigned grievances
   const grievances = await Grievance.getAssignedToCollector(collectorId, status);
+
+  // Ensure populated fields for assigned grievances (helper returns array)
+  if (Array.isArray(grievances) && grievances.length > 0) {
+    await Promise.all(grievances.map(async (g) => {
+      try {
+        await g.populate("userId", "username email contact address");
+        await g.populate("areaId", "name district");
+        await g.populate("assignedTo", "collectorName truckNumber contactNo");
+        await g.populate("garbageId", "binId address latitude longitude status sensorData user area");
+      } catch (e) {
+        // ignore individual populate failures
+      }
+    }));
+  }
 
   // Get collector statistics
   const stats = await Grievance.aggregate([

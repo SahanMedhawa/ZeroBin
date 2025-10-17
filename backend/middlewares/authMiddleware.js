@@ -102,12 +102,20 @@ const authenticateWMA = asyncHandler(async (req, res, next) => {
 const authenticateCollector = asyncHandler(async (req, res, next) => {
   let token;
 
-  token = req.cookies.jwt_collector;
+  // Check JWT in 'Authorization' header or 'jwt_collector' cookie
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1]; // Extract token from Authorization header
+  } else if (req.cookies.jwt_collector) {
+    token = req.cookies.jwt_collector; // Extract token from 'jwt_collector' cookie
+  }
 
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.collector = await Collector.findById(decoded.collectorNIC).select(
+      req.collector = await Collector.findById(decoded.collectorId).select(
         "-truckNumber"
       );
       next();

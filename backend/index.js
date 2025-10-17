@@ -26,7 +26,11 @@ import contactRoutes from "./routes/contactRoutes.js"; // Import contactRoutes
 dotenv.config();
 const port = process.env.PORT || 5000;
 
-connectDB();
+// Only connect to production DB when not in test mode
+// Tests will use MongoDB Memory Server instead
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
 const app = express();
 

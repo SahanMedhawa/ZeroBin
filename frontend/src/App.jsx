@@ -26,6 +26,7 @@ import AdminMap from "./pages/admin/map/AdminMap";
 import AdminAnalytics from "./pages/admin/analytics/AdminAnalytics";
 
 import WMADashboard from "./pages/wma/dashboard/WMADashboard";
+import TicketsReview from "./pages/wma/maintenance/TicketsReview";
 import WMACollectors from "./pages/wma/collectors/ViewCollectors";
 import WMAProfile from "./pages/wma/profile/WMAProfile";
 import WMASchedules from "./pages/wma/schedule/ViewSchedules";
@@ -115,6 +116,7 @@ function App() {
           />
           <Route path="/wma/schedules" element={<ProtectedRoute><WMASchedules /></ProtectedRoute>} />
           <Route path="/wma/profile" element={<ProtectedRoute><WMAProfile /></ProtectedRoute>} />
+          <Route path="/wma/tickets-review" element={<ProtectedRoute><TicketsReview /></ProtectedRoute>} />
 
           {/* Protected Collector Routes */}
           <Route path="/collector/login" element={<CollectorLoginRedirect />} />

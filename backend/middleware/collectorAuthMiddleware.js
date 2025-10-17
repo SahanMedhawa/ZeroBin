@@ -31,7 +31,7 @@ const authenticateCollector = asyncHandler(async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.collector = await Collector.findById(decoded.collectorNIC).select(
+      req.collector = await Collector.findById(decoded.collectorId).select(
         "-truckNumber"
       );
       

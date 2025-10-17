@@ -84,10 +84,19 @@ const CreateGrievance = () => {
     try {
       setSubmitting(true);
       const response = await createGrievance(formData);
-      
-      if (response.success) {
+
+      if (response && response.success) {
         toast.success("Grievance submitted successfully! We'll review it shortly.");
-        navigate("/user/grievances");
+
+        // navigate to Smart Bin page and pass created ticket id so the Smart Bin page
+        // can fetch the created grievance from the DB and show a confirmation panel
+        const createdId = response.grievance?._id || response._id;
+        if (createdId) {
+          navigate(`/user/my-bin?ticketId=${createdId}`);
+        } else {
+          // fallback if response shape changed
+          navigate("/user/my-bin");
+        }
       }
     } catch (error) {
       console.error("Error creating grievance:", error);

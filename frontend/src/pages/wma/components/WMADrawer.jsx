@@ -80,6 +80,15 @@ const WMADrawer = ({ children }) => {
       ),
       label: 'Profile',
     },
+    {
+      path: '/wma/tickets-review',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m2 0a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v3a2 2 0 002 2h14zM9 16h6m-6 4h6" />
+        </svg>
+      ),
+      label: 'Tickets Review',
+    },
   ];
 
   return (

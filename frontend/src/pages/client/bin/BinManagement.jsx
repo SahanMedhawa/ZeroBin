@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { getGrievanceById } from '../../../api/grievanceApi';
 import {
   Box,
   Card,
@@ -21,11 +23,20 @@ import {
   Sensors as SensorsIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
-import { getUserBin, checkUserHasBin } from '../../../api/garbageApi';
+import { getUserBin, checkUserHasBin, submitBinTicket } from '../../../api/garbageApi';
 import RegisterBin from './RegisterBin';
 import SensorControl from './SensorControl';
 import SensorHistory from './SensorHistory';
 import UserDrawer from '../components/UserDrawer';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 /**
  * BinManagement Component
@@ -37,11 +48,41 @@ const BinManagement = () => {
   const [hasBin, setHasBin] = useState(false);
   const [binData, setBinData] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Ticket dialog state
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [ticketPriority, setTicketPriority] = useState('P2');
+  const [ticketDescription, setTicketDescription] = useState('');
+  const [ticketSubmitting, setTicketSubmitting] = useState(false);
+  const location = useLocation();
+  const [ticketConfirmationOpen, setTicketConfirmationOpen] = useState(false);
+  const [ticketConfirmation, setTicketConfirmation] = useState(null);
 
   useEffect(() => {
     checkAndLoadBin();
   }, [refreshKey]);
 
+  // If navigated with ?ticketId=..., fetch that grievance and show confirmation
+// BinManagement.jsx
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  const ticketId = params.get('ticketId');
+  
+  if (ticketId) {
+    const loadTicket = async () => {
+      try {
+        // Fetch ticket details from DB
+        const res = await getGrievanceById(ticketId);
+        if (res?.success && res?.grievance) {
+          setTicketConfirmation(res.grievance);
+          setTicketConfirmationOpen(true);
+        }
+      } catch (err) {
+        console.error('Failed to load ticket:', err);
+      }
+    };
+    loadTicket();
+  }
+}, [location.search]);
   /**
    * Check if user has a bin and load its data
    */
@@ -72,6 +113,77 @@ const BinManagement = () => {
     setRefreshKey(prev => prev + 1);
     toast.info('Refreshing bin data...');
   };
+
+  const handleOpenTicket = () => setTicketDialogOpen(true);
+  const handleCloseTicket = () => {
+    setTicketDialogOpen(false);
+    setTicketPriority('P2');
+    setTicketDescription('');
+  };
+
+const handleSubmitTicket = async () => {
+  try {
+    // Validate bin exists
+    if (!binData?.binId) {
+      toast.error('No registered bin found');
+      return;
+    }
+
+    // Validate description length
+    const description = ticketDescription.trim();
+    if (description.length < 10) {
+      toast.error('Description must be at least 10 characters long');
+      return;
+    }
+
+    if (description.length > 500) {
+      toast.error('Description must not exceed 500 characters');
+      return;
+    }
+
+    // Map priority to severity levels
+    const severityMap = {
+      P1: 'Low',
+      P2: 'Medium', 
+      P3: 'High',
+      P4: 'Critical'
+    };
+
+    const severity = severityMap[ticketPriority];
+    if (!severity) {
+      toast.error('Invalid priority level');
+      return;
+    }
+
+    setTicketSubmitting(true);
+
+    // Submit ticket with validated data
+    const res = await submitBinTicket(binData.binId, {
+      severity,
+      description
+    });
+
+    // Handle successful response
+    if (res?.success && res?.grievance) {
+      setTicketConfirmation(res.grievance);
+      setTicketConfirmationOpen(true);
+      toast.success(res.message || 'Maintenance ticket submitted successfully');
+      handleCloseTicket();
+      handleRefresh();
+    } else {
+      throw new Error('Invalid response from server');
+    }
+  } catch (err) {
+    console.error('Ticket submission error:', err);
+    toast.error(
+      err.response?.data?.message || 
+      err.message || 
+      'Failed to submit ticket. Please try again.'
+    );
+  } finally {
+    setTicketSubmitting(false);
+  }
+};
 
   /**
    * Get color based on fill level
@@ -124,6 +236,17 @@ const BinManagement = () => {
   return (
     <UserDrawer>
       <Box sx={{ p: 3 }}>
+  {ticketConfirmationOpen && ticketConfirmation && (
+  <Alert severity="success">
+    <strong>Ticket Submitted</strong>
+    <div>
+      <div><strong>Ticket ID:</strong> {ticketConfirmation._id}</div>
+      <div><strong>Priority:</strong> {ticketConfirmation.severity}</div>
+      <div><strong>Status:</strong> {ticketConfirmation.status}</div>
+      <div>{ticketConfirmation.description}</div>
+    </div>
+  </Alert>
+)}
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" fontWeight="bold">
@@ -136,6 +259,14 @@ const BinManagement = () => {
           onClick={handleRefresh}
         >
           Refresh
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleOpenTicket}
+          sx={{ ml: 2 }}
+        >
+          Raise Ticket
         </Button>
       </Box>
 
@@ -304,6 +435,46 @@ const BinManagement = () => {
           <SensorHistory bin={binData} />
         </Grid>
       </Grid>
+      {/* Ticket Dialog */}
+      <Dialog open={ticketDialogOpen} onClose={handleCloseTicket}>
+        <DialogTitle>Raise Maintenance Ticket</DialogTitle>
+        <DialogContent dividers>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="ticket-priority-label">Priority</InputLabel>
+            <Select
+              labelId="ticket-priority-label"
+              value={ticketPriority}
+              label="Priority"
+              onChange={(e) => setTicketPriority(e.target.value)}
+            >
+              <MenuItem value="P1">P1 - Low Priority</MenuItem>
+              <MenuItem value="P2">P2 - Medium Priority</MenuItem>
+              <MenuItem value="P3">P3 - High Priority</MenuItem>
+              <MenuItem value="P4">P4 - Critical Priority</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Description"
+            multiline
+            rows={4}
+            value={ticketDescription}
+            onChange={(e) => setTicketDescription(e.target.value)}
+            placeholder="Describe the issue (overflow, damage, smell...)"
+            required
+            error={ticketDescription.trim().length < 10}
+            helperText={ticketDescription.trim().length < 10 ? "Description must be at least 10 characters" : ""}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseTicket} disabled={ticketSubmitting}>Cancel</Button>
+          <Button onClick={handleSubmitTicket} variant="contained" disabled={ticketSubmitting}>
+            {ticketSubmitting ? 'Submitting...' : 'Submit Ticket'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
     </UserDrawer>
   );
