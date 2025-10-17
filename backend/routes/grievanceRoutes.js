@@ -21,6 +21,7 @@ import {
   addCollectorNote,
   
   // Utility
+  getGrievanceById,
   getGrievanceStatistics
 } from "../controllers/grievanceController.js";
 
@@ -51,6 +52,11 @@ router.get("/user/my-grievances", authenticate, getUserGrievances);
 
 // Add a note to user's own grievance
 router.post("/:id/user-note", authenticate, addUserNote);
+
+// Lightweight API docs route placed before parameterized routes to avoid shadowing by "/:id"
+router.get("/docs", (req, res) => {
+  return res.json({ title: "Grievance Management API" });
+});
 
 // ============ ADMIN ROUTES (Admin Authentication Required) ============
 
@@ -110,89 +116,27 @@ router.post("/:id/collector-note", authenticateCollector, addCollectorNote);
  */
 
 // Get single grievance details (accessible by owner, assigned collector, or admin)
-router.get("/:id", authenticate, async (req, res, next) => {
-  try {
-    const grievanceId = req.params.id;
-    const userId = req.user?._id;
-    const collectorId = req.collector?._id;
-    
-    // Build query based on user type
-    let query = { _id: grievanceId };
-    
-    // If regular user, can only see their own grievances
-    if (userId && !req.user.isAdmin) {
-      query.userId = userId;
-    }
-    
-    // If collector, can only see assigned grievances
-    if (collectorId) {
-      query.assignedTo = collectorId;
-    }
-    
-    const Grievance = (await import("../models/grievanceModel.js")).default;
-    
-    const grievance = await Grievance.findOne(query)
-      .populate("userId", "username email contact")
-      .populate("areaId", "name district postalCode")
-      .populate("assignedTo", "collectorName truckNumber contactNo");
-    
-    if (!grievance) {
-      return res.status(404).json({
-        success: false,
-        message: "Grievance not found or you don't have permission to view it"
-      });
-    }
-    
-    res.json({
-      success: true,
-      grievance
-    });
-    
-  } catch (error) {
-    next(error);
-  }
-});
+router.get("/:id", authenticate, getGrievanceById);
 
 // ============ ROUTE VALIDATION MIDDLEWARE ============
 
 /**
  * Middleware to validate ObjectId parameters
+ * Centralized validation to avoid duplication
  */
-const validateObjectId = (paramName) => {
-  return (req, res, next) => {
-    const id = req.params[paramName];
-    
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid ${paramName} format`
-      });
-    }
-    
-    next();
-  };
+const validateObjectId = (paramName, friendlyName) => (req, res, next, value) => {
+  if (!mongoose.Types.ObjectId.isValid(value)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid ${friendlyName} format`
+    });
+  }
+  next();
 };
 
 // Apply ObjectId validation to routes that need it
-router.param('id', (req, res, next, id) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid grievance ID format"
-    });
-  }
-  next();
-});
-
-router.param('areaId', (req, res, next, areaId) => {
-  if (!mongoose.Types.ObjectId.isValid(areaId)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid area ID format"
-    });
-  }
-  next();
-});
+router.param('id', validateObjectId('id', 'grievance ID'));
+router.param('areaId', validateObjectId('areaId', 'area ID'));
 
 // ============ ERROR HANDLING MIDDLEWARE ============
 

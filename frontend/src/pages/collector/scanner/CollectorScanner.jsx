@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import CollectorDrawer from '../components/CollectorDrawer';
 import { toast } from 'react-toastify';
 
@@ -11,20 +11,50 @@ const CollectorScanner = () => {
   const [scanner, setScanner] = useState(null);
   const navigate = useNavigate();
 
+  // Check if camera is available (without requesting permissions)
+  useEffect(() => {
+    const checkCameraAvailability = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length === 0) {
+          setCameraError(true);
+        }
+      } catch (error) {
+        console.error('Error checking camera availability:', error);
+      }
+    };
+
+    checkCameraAvailability();
+  }, []);
+
   useEffect(() => {
     if (scanning && !scanner) {
+      console.log('Starting QR scanner...');
+      
+      // Clear any existing content in the QR reader
+      const qrReaderElement = document.getElementById('qr-reader');
+      if (qrReaderElement) {
+        qrReaderElement.innerHTML = '';
+      }
+      
       const html5QrcodeScanner = new Html5QrcodeScanner(
         'qr-reader',
         { 
           fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+          showTorchButtonIfSupported: true,
+          showZoomSliderIfSupported: true,
         },
         false
       );
 
       html5QrcodeScanner.render(
         (decodedText) => {
+          console.log('QR Code scanned:', decodedText);
           toast.success('QR Code scanned successfully!');
           html5QrcodeScanner.clear();
           setScanning(false);
@@ -32,7 +62,28 @@ const CollectorScanner = () => {
           navigate(`/collector/updateGarbage?id=${decodedText}`);
         },
         (error) => {
-          // Silent error handling - normal operation
+          console.log('Scanner error:', error);
+          // Handle camera permission errors
+          if (error.includes('Permission denied') || error.includes('NotAllowedError')) {
+            console.log('Camera permission denied');
+            setCameraError(true);
+            setScanning(false);
+            setScanner(null);
+            toast.error('Camera permission denied. Please enable camera access in your browser settings.');
+          } else if (error.includes('NotFoundError') || error.includes('NotReadableError')) {
+            console.log('Camera not found');
+            setCameraError(true);
+            setScanning(false);
+            setScanner(null);
+            toast.error('Camera not found or not accessible. Please check your camera connection.');
+          } else if (error.includes('NotSupportedError')) {
+            console.log('Camera not supported');
+            setCameraError(true);
+            setScanning(false);
+            setScanner(null);
+            toast.error('Camera not supported in this browser. Please try Chrome or Edge.');
+          }
+          // Silent handling for other errors (normal scanning operation)
         }
       );
 
@@ -57,14 +108,44 @@ const CollectorScanner = () => {
 
   const toggleScanner = () => {
     if (scanning && scanner) {
+      console.log('Stopping scanner...');
       scanner.clear().then(() => {
         setScanning(false);
         setScanner(null);
         setCameraError(false);
       });
     } else {
+      console.log('Starting scanner...');
       setScanning(true);
       setCameraError(false);
+    }
+  };
+
+  const resetCameraPermissions = async () => {
+    try {
+      console.log('Requesting camera permissions...');
+      // Try to get camera permissions explicitly
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Prefer back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      // If successful, stop the stream and reset state
+      stream.getTracks().forEach(track => track.stop());
+      setCameraError(false);
+      toast.success('Camera permissions granted! You can now start scanning.');
+      console.log('Camera permissions granted successfully');
+    } catch (error) {
+      console.error('Camera permission error:', error);
+      if (error.name === 'NotAllowedError') {
+        toast.error('Camera permission denied. Please enable camera access in your browser settings and refresh the page.');
+      } else if (error.name === 'NotFoundError') {
+        toast.error('No camera found. Please connect a camera and try again.');
+      } else {
+        toast.error('Camera not accessible. Please check your camera connection.');
+      }
     }
   };
 
@@ -78,42 +159,98 @@ const CollectorScanner = () => {
 
           {/* QR Code Scanner Section */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">QR Code Scanner</h2>
-              <button
-                onClick={toggleScanner}
-                className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-                  scanning
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {scanning ? 'Stop Scanner' : 'Start Scanner'}
-              </button>
-            </div>
+                   <div className="flex items-center justify-between mb-4">
+                     <h2 className="text-xl font-semibold text-gray-800">QR Code Scanner</h2>
+                     <div className="flex gap-2">
+                       <button
+                         onClick={toggleScanner}
+                         className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                           scanning
+                             ? 'bg-red-600 hover:bg-red-700 text-white'
+                             : 'bg-green-600 hover:bg-green-700 text-white'
+                         }`}
+                       >
+                         {scanning ? 'Stop Scanner' : 'Start Scanner'}
+                       </button>
+                       <button
+                         onClick={() => {
+                           console.log('Current state:', { scanning, scanner, cameraError });
+                           console.log('QR reader element:', document.getElementById('qr-reader'));
+                           
+                           // Test camera access directly
+                           navigator.mediaDevices.getUserMedia({ video: true })
+                             .then(stream => {
+                               console.log('Camera test successful:', stream);
+                               stream.getTracks().forEach(track => track.stop());
+                               toast.success('Camera is working!');
+                             })
+                             .catch(err => {
+                               console.log('Camera test failed:', err);
+                               toast.error('Camera test failed: ' + err.message);
+                             });
+                         }}
+                         className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm"
+                       >
+                         Test Camera
+                       </button>
+                     </div>
+                   </div>
 
-            {scanning && !cameraError && (
-              <div className="relative">
-                <div id="qr-reader" className="w-full max-w-lg mx-auto"></div>
-                <div className="mt-4 text-center">
-                  <p className="text-gray-600">
-                    Point your camera at the QR code on the smart bin
-                  </p>
-                </div>
-              </div>
-            )}
+                   {scanning && !cameraError && (
+                     <div className="relative">
+                       <div id="qr-reader" className="w-full max-w-lg mx-auto" style={{ minHeight: '300px' }}></div>
+                       <div className="mt-4 text-center">
+                         <p className="text-gray-600">
+                           Point your camera at the QR code on the smart bin
+                         </p>
+                         <p className="text-sm text-gray-500 mt-2">
+                           If the camera doesn't appear, check your browser permissions
+                         </p>
+                       </div>
+                     </div>
+                   )}
 
             {cameraError && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-red-50 border-l-4 border-red-500 p-6">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-red-500 mr-3 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <div>
-                    <p className="text-red-700 font-semibold">Camera Access Denied</p>
-                    <p className="text-red-600 text-sm">
-                      Please enable camera permissions in your browser settings and try again.
+                  <div className="flex-1">
+                    <p className="text-red-700 font-semibold mb-2">Camera Access Denied</p>
+                    <p className="text-red-600 text-sm mb-4">
+                      Camera permissions were denied. To use the QR scanner, you need to enable camera access.
                     </p>
+                    <div className="space-y-3">
+                      <button
+                        onClick={resetCameraPermissions}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Try Again
+                      </button>
+                      <div className="text-xs text-red-600">
+                        <p className="font-semibold mb-1">How to enable camera permissions:</p>
+                        <div className="space-y-2">
+                          <div>
+                            <p className="font-medium">Chrome/Edge:</p>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Click the camera icon in the address bar</li>
+                              <li>Select "Allow" for camera access</li>
+                              <li>Or go to Settings → Privacy → Site Settings → Camera</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-medium">Firefox:</p>
+                            <ul className="list-disc list-inside space-y-1 ml-2">
+                              <li>Click the shield icon in the address bar</li>
+                              <li>Select "Allow" for camera access</li>
+                              <li>Or go to about:preferences#privacy → Permissions</li>
+                            </ul>
+                          </div>
+                          <p className="text-red-500 font-medium">After changing permissions, refresh this page and try again.</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
