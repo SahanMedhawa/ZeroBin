@@ -115,20 +115,65 @@ const AdminGarbage = () => {
   const downloadPDF = () => {
     const doc = new jsPDF();
     
-    // Header
+    // Add ZeroBin logo with proper garbage can icon
+    // Main icon background
+    doc.setFillColor(16, 185, 129); // emerald-500
+    doc.rect(14, 10, 12, 12, 'F');
+    
+    // Garbage can icon (detailed)
+    doc.setFillColor(255, 255, 255); // white
+    // Main body
+    doc.rect(16, 14, 8, 6, 'F');
+    // Lid
+    doc.rect(15, 13, 10, 1, 'F');
+    // Lid handle
+    doc.rect(18, 12, 4, 1, 'F');
+    // Side handles
+    doc.rect(15, 15, 1, 3, 'F'); // left handle
+    doc.rect(24, 15, 1, 3, 'F'); // right handle
+    // Base
+    doc.rect(15, 20, 10, 1, 'F');
+    // Vertical lines for texture
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(17, 14, 17, 20);
+    doc.line(19, 14, 19, 20);
+    doc.line(21, 14, 21, 20);
+    doc.line(23, 14, 23, 20);
+    
+    // Add the "0" indicator
+    doc.setFillColor(45, 212, 191); // teal-400
+    doc.circle(24, 20, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor("59", "130", "246");
+    doc.text("0", 24, 22);
+
+    // Header with consistent styling
+    doc.setTextColor(16, 185, 129); // emerald-500
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
-    doc.text("ZeroBin Admin Portal", 14, 20);
+    doc.text("ZeroBin", 30, 20);
     
+    doc.setTextColor(107, 114, 128); // gray-500
     doc.setFont("helvetica", "normal");
-    doc.setTextColor("0", "0", "0");
-    doc.setFontSize(16);
-    doc.text("Garbage Collection Report", 14, 35);
-    
+    doc.setFontSize(10);
+    doc.text("Admin Portal", 30, 25);
+
+    // Report title
+    doc.setTextColor(30, 64, 175); // blue-800
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Garbage Collection Report", 14, 40);
+
+    // Report details with consistent styling
+    doc.setTextColor(75, 85, 99); // gray-600
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
-    doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 45);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 50);
+    doc.text(`Total Requests: ${filteredGarbages.length}`, 14, 58);
+    doc.text(`Collected: ${filteredGarbages.filter(g => g.status === "Collected").length}`, 14, 66);
+    doc.text(`Pending: ${filteredGarbages.filter(g => g.status === "Pending").length}`, 14, 74);
 
     // Summary data
     const summaryData = [
@@ -141,12 +186,94 @@ const AdminGarbage = () => {
     ];
 
     autoTable(doc, {
-      startY: 55,
+      startY: 85,
       head: [["Summary", "Count"]],
       body: summaryData,
       theme: "grid",
-      headStyles: { fillColor: [59, 130, 246] },
+      headStyles: { 
+        fillColor: [16, 185, 129], // emerald-500
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251] // gray-50
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: { top: 4, right: 2, bottom: 4, left: 2 },
+        overflow: 'linebreak',
+        halign: 'left',
+        valign: 'middle'
+      },
+      columnStyles: {
+        0: { cellWidth: 60 }, // Summary
+        1: { cellWidth: 20 }   // Count
+      },
+      margin: { left: 14, right: 14 }
     });
+
+    // Add detailed garbage requests table
+    const garbageTableData = filteredGarbages.map((garbage) => [
+      garbage.user?.username || "N/A",
+      garbage.user?.email || "N/A",
+      garbage.area?.name || "N/A",
+      garbage.type || "N/A",
+      garbage.status || "N/A",
+      garbage.address || "N/A",
+      garbage.contact || "N/A"
+    ]);
+
+    autoTable(doc, {
+      startY: doc.lastAutoTable.finalY + 20,
+      head: [["Username", "Email", "Area", "Type", "Status", "Address", "Contact"]],
+      body: garbageTableData,
+      theme: "grid",
+      headStyles: { 
+        fillColor: [16, 185, 129], // emerald-500
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251] // gray-50
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: { top: 3, right: 2, bottom: 3, left: 2 },
+        overflow: 'linebreak',
+        halign: 'left',
+        valign: 'middle'
+      },
+      columnStyles: {
+        0: { cellWidth: 25 }, // Username
+        1: { cellWidth: 40 }, // Email
+        2: { cellWidth: 20 }, // Area
+        3: { cellWidth: 20 }, // Type
+        4: { cellWidth: 20 }, // Status
+        5: { cellWidth: 35 }, // Address
+        6: { cellWidth: 20 }  // Contact
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Add footer with ZeroBin branding
+    const pageHeight = doc.internal.pageSize.height;
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Footer line
+    doc.setDrawColor(229, 231, 235); // gray-200
+    doc.setLineWidth(0.5);
+    doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+    
+    // Footer text
+    doc.setTextColor(107, 114, 128); // gray-500
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("ZeroBin Admin Portal - Waste Management System", 14, pageHeight - 10);
+    
+    // Get admin email from localStorage
+    const userInfo = localStorage.getItem('userInfo');
+    const adminEmail = userInfo ? JSON.parse(userInfo).email : 'admin@zerobin.com';
+    doc.text(`Generated by ZeroBin ${adminEmail}`, pageWidth - 14, pageHeight - 10, { align: 'right' });
 
     const generatedDate = new Date().toLocaleDateString().replace(/\//g, "-");
     doc.save(`Garbage_Report_${generatedDate}.pdf`);

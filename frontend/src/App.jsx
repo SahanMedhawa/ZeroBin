@@ -21,6 +21,9 @@ import AdminGarbageUpdate from "./pages/admin/garbage/AdminGarbageUpdate";
 import AdminUsers from "./pages/admin/users/AdminUsers";
 import AdminWMAs from "./pages/admin/wmas/AdminWMAs";
 import AdminGrievances from "./pages/admin/grievances/AdminGrievances";
+import AdminContacts from "./pages/admin/contacts/AdminContacts";
+import AdminMap from "./pages/admin/map/AdminMap";
+import AdminAnalytics from "./pages/admin/analytics/AdminAnalytics";
 
 import WMADashboard from "./pages/wma/dashboard/WMADashboard";
 import WMACollectors from "./pages/wma/collectors/ViewCollectors";
@@ -145,6 +148,9 @@ function App() {
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/wmas" element={<ProtectedRoute><AdminWMAs /></ProtectedRoute>} />
           <Route path="/admin/grievances" element={<ProtectedRoute><AdminGrievances /></ProtectedRoute>} />
+          <Route path="/admin/contacts" element={<ProtectedRoute><AdminContacts /></ProtectedRoute>} />
+          <Route path="/admin/map" element={<ProtectedRoute><AdminMap /></ProtectedRoute>} />
+          <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>} />
           {/* Removed: Admin smart device routes - Dead code (replaced by Smart Bin system) */}
           {/* <Route path="/admin/devices" element={<ProtectedRoute><AdminDevice /></ProtectedRoute>} /> */}
           {/* <Route path="/admin/devices/update" element={<ProtectedRoute><AdminDeviceUpdate /></ProtectedRoute>} /> */}
