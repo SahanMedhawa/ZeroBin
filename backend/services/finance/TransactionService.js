@@ -22,6 +22,7 @@ export default class TransactionService extends ITransactionService {
   toDTO(tx) {
     return {
       id: tx._id?.toString(),
+      _id: tx._id?.toString(),
       user: tx.user,
       description: tx.description,
       isRefund: tx.isRefund,
