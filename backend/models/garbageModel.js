@@ -173,8 +173,7 @@ garbageSchema.index({ user: 1, isBinRegistered: 1 });
 // Compound index for collector queries (area + visibility + status)
 garbageSchema.index({ area: 1, isVisibleToCollectors: 1, status: 1 });
 
-// Index for bin ID lookups
-garbageSchema.index({ binId: 1 });
+// Note: binId already has unique:true in schema, no need for duplicate index
 
 // Index for sensor-based queries
 garbageSchema.index({ "sensorData.fillLevel": 1 });

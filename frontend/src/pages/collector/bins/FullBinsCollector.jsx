@@ -310,18 +310,29 @@ const FullBinsCollector = () => {
             {/* Map View */}
             {viewMode === 'map' && (
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className={`h-[${MAP_HEIGHT_PX}px] relative`}>
-                  <MapContainer
-                    center={mapCenter}
-                    zoom={MAP_ZOOM_LEVEL}
-                    style={{ height: '100%', width: '100%' }}
-                    key={`map-${fullBins.length}`}
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    />
-                    {fullBins.map((bin) => (
+                <div className="h-[600px] relative">
+                  {fullBins.length === 0 ? (
+                    <div className="h-full flex items-center justify-center bg-gray-50">
+                      <div className="text-center">
+                        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No bins to display</h3>
+                        <p className="text-gray-600">No full bins are currently available for collection.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <MapContainer
+                      center={mapCenter}
+                      zoom={MAP_ZOOM_LEVEL}
+                      style={{ height: '100%', width: '100%' }}
+                      key={`map-${fullBins.length}`}
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      />
+                      {fullBins.map((bin) => (
                       <Marker
                         key={bin._id}
                         position={[bin.latitude, bin.longitude]}
@@ -417,7 +428,8 @@ const FullBinsCollector = () => {
                         </Popup>
                       </Marker>
                     ))}
-                  </MapContainer>
+                    </MapContainer>
+                  )}
                 </div>
               </div>
             )}

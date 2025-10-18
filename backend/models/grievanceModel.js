@@ -5,6 +5,91 @@ import mongoose from "mongoose";
  * Handles citizen complaints about garbage collection issues
  * Integrates with existing sensor-based garbage collection system
  */
+
+// ============ CONSTANTS ============
+
+/**
+ * Valid statuses for grievance workflow
+ */
+const GRIEVANCE_STATUSES = {
+  OPEN: "Open",
+  IN_PROGRESS: "In Progress",
+  RESOLVED: "Resolved",
+  CLOSED: "Closed"
+};
+
+/**
+ * Valid severity levels
+ */
+const GRIEVANCE_SEVERITIES = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+  CRITICAL: "Critical"
+};
+
+/**
+ * Expected resolution time in hours based on severity
+ */
+const RESOLUTION_TIME_HOURS = {
+  [GRIEVANCE_SEVERITIES.CRITICAL]: 2,
+  [GRIEVANCE_SEVERITIES.HIGH]: 8,
+  [GRIEVANCE_SEVERITIES.MEDIUM]: 24,
+  [GRIEVANCE_SEVERITIES.LOW]: 72
+};
+
+/**
+ * Priority score weights for calculation
+ */
+const PRIORITY_WEIGHTS = {
+  SEVERITY: {
+    [GRIEVANCE_SEVERITIES.CRITICAL]: 40,
+    [GRIEVANCE_SEVERITIES.HIGH]: 30,
+    [GRIEVANCE_SEVERITIES.MEDIUM]: 20,
+    [GRIEVANCE_SEVERITIES.LOW]: 10
+  },
+  AGE_MULTIPLIER: 0.5,
+  MAX_AGE_SCORE: 30,
+  ESCALATION_BONUS: 20
+};
+
+/**
+ * Validation limits
+ */
+const VALIDATION_LIMITS = {
+  DESCRIPTION_MAX: 500,
+  DESCRIPTION_MIN: 10,
+  NOTE_MAX: 1000,
+  PRIORITY_MAX: 100,
+  PRIORITY_MIN: 0
+};
+
+/**
+ * Time conversion constants
+ */
+const TIME_CONSTANTS = {
+  MS_PER_HOUR: 1000 * 60 * 60,
+  HOURS_PER_DAY: 24
+};
+
+/**
+ * Color mappings for UI
+ */
+const COLOR_MAPS = {
+  SEVERITY: {
+    [GRIEVANCE_SEVERITIES.LOW]: 'green',
+    [GRIEVANCE_SEVERITIES.MEDIUM]: 'yellow',
+    [GRIEVANCE_SEVERITIES.HIGH]: 'orange',
+    [GRIEVANCE_SEVERITIES.CRITICAL]: 'red'
+  },
+  STATUS: {
+    [GRIEVANCE_STATUSES.OPEN]: 'red',
+    [GRIEVANCE_STATUSES.IN_PROGRESS]: 'blue',
+    [GRIEVANCE_STATUSES.RESOLVED]: 'green',
+    [GRIEVANCE_STATUSES.CLOSED]: 'gray'
+  }
+};
+
 const grievanceSchema = mongoose.Schema(
   {
     // ============ CORE GRIEVANCE FIELDS ============
@@ -77,8 +162,8 @@ const grievanceSchema = mongoose.Schema(
       type: String,
       required: [true, "Severity level is required"],
       enum: {
-        values: ["Low", "Medium", "High", "Critical"],
-        message: "Severity must be Low, Medium, High, or Critical"
+        values: Object.values(GRIEVANCE_SEVERITIES),
+        message: `Severity must be one of: ${Object.values(GRIEVANCE_SEVERITIES).join(', ')}`
       }
     },
 
@@ -89,8 +174,8 @@ const grievanceSchema = mongoose.Schema(
     description: {
       type: String,
       required: [true, "Description is required"],
-      maxLength: [500, "Description cannot exceed 500 characters"],
-      minLength: [10, "Description must be at least 10 characters"],
+      maxLength: [VALIDATION_LIMITS.DESCRIPTION_MAX, `Description cannot exceed ${VALIDATION_LIMITS.DESCRIPTION_MAX} characters`],
+      minLength: [VALIDATION_LIMITS.DESCRIPTION_MIN, `Description must be at least ${VALIDATION_LIMITS.DESCRIPTION_MIN} characters`],
       trim: true
     },
 
@@ -101,10 +186,10 @@ const grievanceSchema = mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["Open", "In Progress", "Resolved", "Closed"],
-        message: "Status must be Open, In Progress, Resolved, or Closed"
+        values: Object.values(GRIEVANCE_STATUSES),
+        message: `Status must be one of: ${Object.values(GRIEVANCE_STATUSES).join(', ')}`
       },
-      default: "Open"
+      default: GRIEVANCE_STATUSES.OPEN
     },
 
     /**
@@ -140,7 +225,7 @@ const grievanceSchema = mongoose.Schema(
         content: {
           type: String,
           required: [true, "Note content is required"],
-          maxLength: [1000, "Note cannot exceed 1000 characters"],
+          maxLength: [VALIDATION_LIMITS.NOTE_MAX, `Note cannot exceed ${VALIDATION_LIMITS.NOTE_MAX} characters`],
           trim: true
         },
         addedBy: {
@@ -177,8 +262,8 @@ const grievanceSchema = mongoose.Schema(
     priorityScore: {
       type: Number,
       default: 0,
-      min: 0,
-      max: 100
+      min: VALIDATION_LIMITS.PRIORITY_MIN,
+      max: VALIDATION_LIMITS.PRIORITY_MAX
     },
 
     /**
@@ -242,7 +327,7 @@ grievanceSchema.index({ isEscalated: 1, expectedResolutionTime: 1 });
  * Useful for priority calculation and SLA tracking
  */
 grievanceSchema.virtual('ageInHours').get(function() {
-  return Math.floor((Date.now() - this.createdAt) / (1000 * 60 * 60));
+  return Math.floor((Date.now() - this.createdAt) / TIME_CONSTANTS.MS_PER_HOUR);
 });
 
 /**
@@ -251,7 +336,7 @@ grievanceSchema.virtual('ageInHours').get(function() {
  */
 grievanceSchema.virtual('timeToResolution').get(function() {
   if (!this.expectedResolutionTime) return null;
-  return Math.floor((this.expectedResolutionTime - Date.now()) / (1000 * 60 * 60));
+  return Math.floor((this.expectedResolutionTime - Date.now()) / TIME_CONSTANTS.MS_PER_HOUR);
 });
 
 /**
@@ -259,13 +344,7 @@ grievanceSchema.virtual('timeToResolution').get(function() {
  * Used in frontend for visual indicators
  */
 grievanceSchema.virtual('severityColor').get(function() {
-  const colorMap = {
-    'Low': 'green',
-    'Medium': 'yellow',
-    'High': 'orange',
-    'Critical': 'red'
-  };
-  return colorMap[this.severity] || 'gray';
+  return COLOR_MAPS.SEVERITY[this.severity] || 'gray';
 });
 
 /**
@@ -273,13 +352,7 @@ grievanceSchema.virtual('severityColor').get(function() {
  * Used in frontend for visual indicators
  */
 grievanceSchema.virtual('statusColor').get(function() {
-  const colorMap = {
-    'Open': 'red',
-    'In Progress': 'blue',
-    'Resolved': 'green',
-    'Closed': 'gray'
-  };
-  return colorMap[this.status] || 'gray';
+  return COLOR_MAPS.STATUS[this.status] || 'gray';
 });
 
 // ============ INSTANCE METHODS ============
@@ -316,7 +389,7 @@ grievanceSchema.methods.updateStatus = function(newStatus, updatedBy, updatedByM
   this.status = newStatus;
   
   // Set resolution timestamp if resolved
-  if (newStatus === "Resolved" && oldStatus !== "Resolved") {
+  if (newStatus === GRIEVANCE_STATUSES.RESOLVED && oldStatus !== GRIEVANCE_STATUSES.RESOLVED) {
     this.resolvedAt = new Date();
   }
   
@@ -339,7 +412,7 @@ grievanceSchema.methods.updateStatus = function(newStatus, updatedBy, updatedByM
 grievanceSchema.methods.assignToCollector = function(collectorId, assignedBy, reason = "") {
   const oldCollector = this.assignedTo;
   this.assignedTo = collectorId;
-  this.status = "In Progress";
+  this.status = GRIEVANCE_STATUSES.IN_PROGRESS;
   
   const noteContent = oldCollector 
     ? `Reassigned to new collector. Reason: ${reason}`
@@ -355,16 +428,9 @@ grievanceSchema.methods.assignToCollector = function(collectorId, assignedBy, re
  * Higher scores indicate higher priority
  */
 grievanceSchema.methods.calculatePriorityScore = function() {
-  const severityWeights = {
-    'Critical': 40,
-    'High': 30,
-    'Medium': 20,
-    'Low': 10
-  };
-  
-  const ageWeight = Math.min(this.ageInHours * 0.5, 30); // Max 30 points for age
-  const severityWeight = severityWeights[this.severity] || 10;
-  const escalationWeight = this.isEscalated ? 20 : 0;
+  const severityWeight = PRIORITY_WEIGHTS.SEVERITY[this.severity] || PRIORITY_WEIGHTS.SEVERITY[GRIEVANCE_SEVERITIES.LOW];
+  const ageWeight = Math.min(this.ageInHours * PRIORITY_WEIGHTS.AGE_MULTIPLIER, PRIORITY_WEIGHTS.MAX_AGE_SCORE);
+  const escalationWeight = this.isEscalated ? PRIORITY_WEIGHTS.ESCALATION_BONUS : 0;
   
   this.priorityScore = severityWeight + ageWeight + escalationWeight;
   return this.priorityScore;
@@ -462,46 +528,76 @@ grievanceSchema.pre('save', async function(next) {
   try {
     // Auto-populate areaId from bin data if not set
     if (!this.areaId && this.binId) {
-      const Garbage = mongoose.model('Garbage');
-      const bin = await Garbage.findOne({ binId: this.binId });
-      if (bin) {
-        this.areaId = bin.area;
-      }
+      await this._populateAreaFromBin();
     }
     
     // Set expected resolution time based on severity
     if (this.isNew && !this.expectedResolutionTime) {
-      const resolutionHours = {
-        'Critical': 2,   // 2 hours
-        'High': 8,       // 8 hours  
-        'Medium': 24,    // 24 hours
-        'Low': 72        // 72 hours
-      };
-      
-      const hours = resolutionHours[this.severity] || 24;
-      this.expectedResolutionTime = new Date(Date.now() + hours * 60 * 60 * 1000);
+      this._setExpectedResolutionTime();
     }
     
     // Calculate priority score
     this.calculatePriorityScore();
     
     // Check for escalation
-    if (this.expectedResolutionTime && Date.now() > this.expectedResolutionTime && !this.isEscalated) {
-      this.isEscalated = true;
-    }
+    this._checkAndSetEscalation();
     
     next();
   } catch (error) {
+    // Log pre-save errors for debugging
+    console.error(`[GRIEVANCE_MODEL] Pre-save error: ID=${this._id}, BinId=${this.binId}, Error=${error.message}`);
     next(error);
   }
 });
 
 /**
+ * Helper: Populate area from bin data
+ * @private
+ */
+grievanceSchema.methods._populateAreaFromBin = async function() {
+  const Garbage = mongoose.model('Garbage');
+  const bin = await Garbage.findOne({ binId: this.binId });
+  if (bin) {
+    this.areaId = bin.area;
+  }
+};
+
+/**
+ * Helper: Set expected resolution time based on severity
+ * @private
+ */
+grievanceSchema.methods._setExpectedResolutionTime = function() {
+  const hours = RESOLUTION_TIME_HOURS[this.severity] || RESOLUTION_TIME_HOURS[GRIEVANCE_SEVERITIES.MEDIUM];
+  this.expectedResolutionTime = new Date(Date.now() + hours * TIME_CONSTANTS.MS_PER_HOUR);
+};
+
+/**
+ * Helper: Check if grievance should be escalated
+ * @private
+ */
+grievanceSchema.methods._checkAndSetEscalation = function() {
+  if (this.expectedResolutionTime && Date.now() > this.expectedResolutionTime && !this.isEscalated) {
+    this.isEscalated = true;
+    // Log escalation event
+    console.log(`[GRIEVANCE_MODEL] Auto-escalated: ID=${this._id}, Severity=${this.severity}, Area=${this.areaId}, ExpectedTime=${this.expectedResolutionTime}`);
+  }
+};
+
+/**
  * Post-save middleware for logging and notifications
  */
 grievanceSchema.post('save', function(doc) {
-  // Log grievance creation/updates for audit trail
-  console.log(`Grievance ${doc._id} updated: Status=${doc.status}, Severity=${doc.severity}`);
+  // Only log significant changes, not every save (avoid spam)
+  if (doc.isNew) {
+    // Log new grievance creation at model level
+    console.log(`[GRIEVANCE_MODEL] Created: ID=${doc._id}, Status=${doc.status}, Severity=${doc.severity}, Priority=${doc.priorityScore}`);
+  } else if (doc.isModified('status')) {
+    // Log status changes
+    console.log(`[GRIEVANCE_MODEL] Status changed: ID=${doc._id}, NewStatus=${doc.status}, Severity=${doc.severity}`);
+  } else if (doc.isModified('assignedTo')) {
+    // Log assignment changes
+    console.log(`[GRIEVANCE_MODEL] Assignment changed: ID=${doc._id}, AssignedTo=${doc.assignedTo}`);
+  }
   
   // TODO: Add notification logic here (email, SMS, push notifications)
   // This would integrate with a notification service

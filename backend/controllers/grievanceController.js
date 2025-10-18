@@ -2,7 +2,6 @@ import asyncHandler from "express-async-handler";
 import Grievance from "../models/grievanceModel.js";
 import Garbage from "../models/garbageModel.js";
 import Collector from "../models/collectorModel.js";
-import User from "../models/userModel.js";
 import Area from "../models/areaModel.js";
 import routeOptimizer from "../services/IRouteOptimizer.js";
 
@@ -24,6 +23,32 @@ import routeOptimizer from "../services/IRouteOptimizer.js";
  * @body    {String} description - Issue description
  * @returns {Object} - Created grievance
  */
+// Constants and small helpers
+const VALID_STATUSES = ["Open", "In Progress", "Resolved", "Closed"];
+
+function safeInt(value, fallback = 0) {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+async function populateGrievanceDetails(grievance) {
+  // Centralized populate calls to avoid repetition and keep controllers DRY
+  await grievance.populate("userId", "username email contact address");
+  await grievance.populate("areaId", "name district");
+  // assignedTo and garbageId are optional; populate when present
+  try {
+    await grievance.populate("assignedTo", "collectorName truckNumber contactNo");
+  } catch (e) {
+    // ignore populate errors for optional relations
+  }
+  try {
+    await grievance.populate("garbageId", "binId location latitude longitude status");
+  } catch (e) {
+    // ignore
+  }
+  return grievance;
+}
+
 const createGrievance = asyncHandler(async (req, res) => {
   const { binId, severity, description } = req.body;
   const userId = req.user._id;
@@ -64,9 +89,11 @@ const createGrievance = asyncHandler(async (req, res) => {
     status: "Open"
   });
 
+  // Log critical operation
+  console.log(`[GRIEVANCE] Created: ID=${grievance._id}, User=${userId}, Bin=${binId}, Severity=${severity}, Area=${bin.area}`);
+
   // Populate related data
-  await grievance.populate("userId", "username email contact address");
-  await grievance.populate("areaId", "name district");
+  await populateGrievanceDetails(grievance);
 
   // Add initial system note
   grievance.addNote(
@@ -80,12 +107,13 @@ const createGrievance = asyncHandler(async (req, res) => {
   // Trigger route optimization if high priority
   if (severity === "Critical" || severity === "High") {
     try {
+      console.log(`[GRIEVANCE] Triggering route optimization for high-priority grievance: ID=${grievance._id}, Severity=${severity}`);
       await routeOptimizer.triggerReevaluation(bin.area, {
         urgent: severity === "Critical",
         grievanceId: grievance._id
       });
     } catch (error) {
-      console.error("Route optimization failed:", error);
+      console.error(`[GRIEVANCE] Route optimization failed for grievance ID=${grievance._id}:`, error.message);
       // Don't fail the grievance creation if optimization fails
     }
   }
@@ -117,25 +145,28 @@ const getUserGrievances = asyncHandler(async (req, res) => {
   }
 
   // Calculate pagination
-  const skip = (page - 1) * limit;
+  // Parse pagination parameters safely
+  const pageNum = safeInt(page, 1);
+  const limitNum = safeInt(limit, 10);
+  const skip = (pageNum - 1) * limitNum;
   const total = await Grievance.countDocuments(query);
 
   // Get grievances
   const grievances = await Grievance.find(query)
     .populate("areaId", "name district")
     .populate("assignedTo", "collectorName truckNumber contactNo")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(parseInt(limit));
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(limitNum);
 
   res.json({
     success: true,
     grievances,
     pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / limit),
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limitNum),
       totalItems: total,
-      itemsPerPage: parseInt(limit)
+      itemsPerPage: limitNum
     }
   });
 });
@@ -169,10 +200,7 @@ const addUserNote = asyncHandler(async (req, res) => {
 
   grievance.addNote(content.trim(), userId, "User", "Update");
   await grievance.save();
-
-  await grievance.populate("userId", "username email contact address");
-  await grievance.populate("areaId", "name district");
-  await grievance.populate("assignedTo", "collectorName truckNumber");
+  await populateGrievanceDetails(grievance);
 
   res.json({
     success: true,
@@ -219,8 +247,10 @@ const getAllGrievances = asyncHandler(async (req, res) => {
   if (assignedTo) query.assignedTo = assignedTo;
   if (escalated !== undefined) query.isEscalated = escalated === 'true';
 
-  // Calculate pagination
-  const skip = (page - 1) * limit;
+  // Calculate pagination with safe parsing
+  const pageNum = safeInt(page, 1);
+  const limitNum = safeInt(limit, 20);
+  const skip = (pageNum - 1) * limitNum;
   const total = await Grievance.countDocuments(query);
 
   // Build sort object
@@ -233,9 +263,9 @@ const getAllGrievances = asyncHandler(async (req, res) => {
     .populate("areaId", "name district postalCode")
     .populate("assignedTo", "collectorName truckNumber contactNo")
     .populate("garbageId", "binId location latitude longitude status")
-    .sort(sort)
-    .skip(skip)
-    .limit(parseInt(limit));
+      .sort(sort)
+      .skip(skip)
+      .limit(limitNum);
 
   // Get statistics
   const stats = await Grievance.getStatistics();
@@ -245,10 +275,10 @@ const getAllGrievances = asyncHandler(async (req, res) => {
     grievances,
     statistics: stats,
     pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(total / limit),
+      currentPage: pageNum,
+      totalPages: Math.ceil(total / limitNum),
       totalItems: total,
-      itemsPerPage: parseInt(limit)
+      itemsPerPage: limitNum
     }
   });
 });
@@ -270,11 +300,9 @@ const updateGrievanceStatus = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Status is required");
   }
-
-  const validStatuses = ["Open", "In Progress", "Resolved", "Closed"];
-  if (!validStatuses.includes(status)) {
+  if (!VALID_STATUSES.includes(status)) {
     res.status(400);
-    throw new Error("Invalid status. Must be: " + validStatuses.join(", "));
+    throw new Error("Invalid status. Must be: " + VALID_STATUSES.join(", "));
   }
 
   const grievance = await Grievance.findById(req.params.id);
@@ -286,6 +314,9 @@ const updateGrievanceStatus = asyncHandler(async (req, res) => {
   // Update status with reason
   grievance.updateStatus(status, adminId, "Admin", reason);
   await grievance.save();
+
+  // Log critical state change
+  console.log(`[GRIEVANCE] Status updated: ID=${grievance._id}, OldStatus=${grievance.status}, NewStatus=${status}, Admin=${adminId}, Reason=${reason || 'N/A'}`);
 
   // Populate related data
   await grievance.populate("userId", "username email contact address");
@@ -343,6 +374,9 @@ const assignGrievanceToCollector = asyncHandler(async (req, res) => {
   // Assign grievance
   grievance.assignToCollector(collectorId, adminId, reason);
   await grievance.save();
+
+  // Log assignment event
+  console.log(`[GRIEVANCE] Assigned to collector: ID=${grievance._id}, Collector=${collectorId}, Area=${grievance.areaId}, Admin=${adminId}, Reason=${reason || 'N/A'}`);
 
   // Populate related data
   await grievance.populate("userId", "username email contact address");
@@ -571,6 +605,9 @@ const resolveGrievance = asyncHandler(async (req, res) => {
   
   await grievance.save();
 
+  // Log resolution
+  console.log(`[GRIEVANCE] Resolved by collector: ID=${grievance._id}, Collector=${collectorId}, Bin=${grievance.binId}`);
+
   // Populate related data
   await grievance.populate("userId", "username email contact address");
   await grievance.populate("areaId", "name district");
@@ -623,6 +660,48 @@ const addCollectorNote = asyncHandler(async (req, res) => {
 });
 
 // ============ UTILITY FUNCTIONS ============
+
+/**
+ * @route   GET /api/grievances/:id
+ * @desc    Get single grievance by ID (with role-based access control)
+ * @access  Private (User/Collector/Admin based on ownership/assignment)
+ * @param   {String} id - Grievance ID
+ * @returns {Object} - Grievance details
+ */
+const getGrievanceById = asyncHandler(async (req, res) => {
+  const grievanceId = req.params.id;
+  const userId = req.user?._id;
+  const collectorId = req.collector?._id;
+  
+  // Build query based on user type
+  let query = { _id: grievanceId };
+  
+  // If regular user, can only see their own grievances
+  if (userId && !req.user.isAdmin) {
+    query.userId = userId;
+  }
+  
+  // If collector, can only see assigned grievances
+  if (collectorId) {
+    query.assignedTo = collectorId;
+  }
+  
+  const grievance = await Grievance.findOne(query)
+    .populate("userId", "username email contact")
+    .populate("areaId", "name district postalCode")
+    .populate("assignedTo", "collectorName truckNumber contactNo")
+    .populate("garbageId", "binId location latitude longitude status");
+  
+  if (!grievance) {
+    res.status(404);
+    throw new Error("Grievance not found or you don't have permission to view it");
+  }
+  
+  res.json({
+    success: true,
+    grievance
+  });
+});
 
 /**
  * @route   GET /api/grievances/statistics
@@ -700,5 +779,6 @@ export {
   addCollectorNote,
   
   // Utility
+  getGrievanceById,
   getGrievanceStatistics
 };
